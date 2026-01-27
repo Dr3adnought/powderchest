@@ -47,19 +47,56 @@
             const response = await fetch(`https://api.mcstatus.io/v2/status/java/${domain}`);
             const data = await response.json();
             const el = document.getElementById(elementId);
+            
+            // Find the container that holds the button/status (likely your .card)
+            const cardBody = el.parentElement;
 
             if (data.online) {
+                let playerHtml = "";
+                
+                // Only create toggle if players are actually online
+                if (data.players.list && data.players.list.length > 0) {
+                    const names = data.players.list.map(p => p.name_clean).join(', ');
+                    const listId = `list-${elementId}`;
+                    
+                    playerHtml = `
+                        <a href="javascript:void(0)" class="toggle-players" onclick="toggleDisplay('${listId}')">
+                            + Show Players
+                        </a>
+                        <div id="${listId}" class="player-list">
+                            📋 ${names}
+                        </div>`;
+                }
+
                 el.innerHTML = `
-                    <span class="status-dot dot-online"></span>
+                    Status: <span class="status-dot dot-online"></span>
                     <span class="text-online">Online</span> 
                     <small>(${data.players.online}/${data.players.max})</small>`;
+                
+                // Append the toggle/list below the status/button area
+                // If you already have the Live Map button, this will appear after it
+                el.insertAdjacentHTML('afterend', playerHtml);
+
             } else {
                 el.innerHTML = `
-                    <span class="status-dot dot-offline"></span>
+                    Status: <span class="status-dot dot-offline"></span>
                     <span class="text-offline">Offline</span>`;
             }
         } catch (error) {
-            document.getElementById(elementId).innerText = "Error loading status";
+            console.error("Status check failed:", error);
+        }
+    }
+
+    // Simple function to flip the visibility
+    function toggleDisplay(id) {
+        const list = document.getElementById(id);
+        const link = list.previousElementSibling;
+        if (list.style.display === "block") {
+            list.style.display = "none";
+            link.innerText = "+ Show Players";
+        } else {
+            list.style.display = "block";
+            link.innerText = "- Hide Players";
         }
     }
 

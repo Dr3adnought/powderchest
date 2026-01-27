@@ -160,6 +160,35 @@ body {
     to { transform: rotate(360deg); }
 }
 
+/* Styling for the Toggle Link */
+.toggle-players {
+    display: block;
+    margin: 10px auto 0;
+    font-size: 0.75rem;
+    color: #d4af37; /* Gold to match your theme */
+    text-decoration: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.toggle-players:hover {
+    opacity: 1;
+}
+
+/* Container for the hidden names */
+.player-list {
+    display: none; /* Hidden by default */
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #a0a0a0;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.4;
+    text-align: center;
+}
+
 .btn-standard { background: #3498db; }
 .btn-standard:hover { background: transparent; border-color: #3498db; color: #3498db; }
 
