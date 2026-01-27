@@ -1,7 +1,7 @@
 /* 1. Font Setup */
 @font-face {
     font-family: 'PirateFont';
-    src: url('fonts/pieces_of_eight.ttf') format('truetype');
+    src: url('fonts/pieces_of_eight.ttf?v=3') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
