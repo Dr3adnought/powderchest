@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowderChest | Home Lab & Servers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+
+    <div class="hero">
+        <h1 class="brand-title">powderchest</h1>
+        <p class="brand-subtitle">Maritime Defense & Intelligence Stack</p>
+    </div>
+
+    <div class="controls">
+        <button onclick="updateAllStatuses()" class="refresh-btn">
+            <span id="refresh-icon">↻</span> Refresh Status
+        </button>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="server-card">
+                <h2>The Standard</h2>
+                <div class="status-box">
+                    Status: <span id="standard-status">Checking...</span>
+                </div>
+                <a href="http://thestandard.powderchest.com" class="btn btn-standard">Live Map</a>
+            </div>
+
+            <div class="server-card">
+                <h2>FakeMas0n</h2>
+                <div class="status-box">
+                    Status: <span id="teen-status">Checking...</span>
+                </div>
+                <a href="http://fakemas0n.powderchest.com" class="btn btn-mason">Live Map</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // 1. The Core Logic: Fetches data for a specific server
+    async function checkStatus(elementId, domain) {
+        try {
+            const response = await fetch(`https://api.mcstatus.io/v2/status/java/${domain}`);
+            const data = await response.json();
+            const el = document.getElementById(elementId);
+
+            if (data.online) {
+                el.innerHTML = `
+                    <span class="status-dot dot-online"></span>
+                    <span class="text-online">Online</span> 
+                    <small>(${data.players.online}/${data.players.max})</small>`;
+            } else {
+                el.innerHTML = `
+                    <span class="status-dot dot-offline"></span>
+                    <span class="text-offline">Offline</span>`;
+            }
+        } catch (error) {
+            document.getElementById(elementId).innerText = "Error loading status";
+        }
+    }
+
+    // 2. The Orchestrator: Handles the button animation and triggers both checks
+    async function updateAllStatuses() {
+        const btn = document.getElementById('refresh-icon');
+        
+        // Add spinning class if the button exists
+        if (btn) btn.classList.add('spinning');
+        
+        // "await Promise.all" runs both checks at the same time and waits for both to finish
+        await Promise.all([
+            checkStatus('standard-status', 'thestandard.powderchest.com'),
+            checkStatus('teen-status', 'fakemas0n.powderchest.com')
+        ]);
+        
+        // Remove the spin after a slight delay so the user sees the feedback
+        if (btn) {
+            setTimeout(() => {
+                btn.classList.remove('spinning');
+            }, 600);
+        }
+    }
+
+    // 3. Init: Run immediately when the page loads
+    window.onload = updateAllStatuses;
+</script>
+</body>
+</html>

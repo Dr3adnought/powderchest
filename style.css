@@ -1,0 +1,168 @@
+/* 1. Font Setup */
+@font-face {
+    font-family: 'PirateFont';
+    src: url('fonts/pieces_of_eight.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: #0f0f0f;
+    color: #f0f0f0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* 2. Hero Header */
+.hero {
+    text-align: center;
+    padding: 60px 20px 40px;
+}
+
+.brand-title {
+    font-family: 'PirateFont', Georgia, serif !important;
+    font-size: 6.5rem;
+    margin: 0;
+    background: linear-gradient(to bottom, #f1c40f 0%, #d4af37 50%, #8e6d13 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(4px 4px 2px rgba(0,0,0,0.8));
+    text-transform: lowercase;
+}
+
+.brand-subtitle {
+    margin-top: -10px;
+    text-transform: uppercase;
+    letter-spacing: 6px;
+    color: #666;
+    font-weight: 300;
+    font-size: 0.85rem;
+}
+
+/* 3. Grid & Cards */
+.container {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 20px;
+}
+
+.server-card {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 30px;
+    width: 280px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.server-card:hover {
+    border-color: #d4af37;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.server-card h2 {
+    margin-top: 0;
+    font-weight: 600;
+    color: #eee;
+}
+
+/* 4. Status Styles */
+.status-box {
+    margin: 20px 0;
+    font-size: 0.9rem;
+    color: #888;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* The actual dot */
+.status-dot {
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dot-online { 
+    background-color: #2ecc71; 
+    box-shadow: 0 0 8px #2ecc71; 
+}
+
+.dot-offline { 
+    background-color: #e74c3c; 
+}
+
+.text-online { color: #2ecc71; font-weight: bold; }
+.text-offline { color: #e74c3c; font-weight: bold; }
+
+/* 5. Buttons */
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    text-decoration: none;
+    color: white;
+    border-radius: 6px;
+    font-weight: bold;
+    border: 2px solid transparent;
+    transition: 0.3s;
+}
+
+.refresh-btn {
+    all: unset; /* Nukes default browser button styling */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    
+    background-color: #2d2d2d !important;
+    border: 2px solid #d4af37 !important;
+    color: #d4af37 !important;
+    
+    padding: 10px 20px;
+    margin: 20px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.refresh-btn:hover {
+    background-color: #d4af37 !important;
+    color: #000 !important;
+}
+
+/* Target the icon span for spinning animation */
+#refresh-icon {
+    display: inline-block;
+    font-size: 1.2em;
+    line-height: 1;
+    transition: transform 0.1s ease;
+}
+
+#refresh-icon.spinning {
+    animation: spin 0.8s ease-in-out !important;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.btn-standard { background: #3498db; }
+.btn-standard:hover { background: transparent; border-color: #3498db; color: #3498db; }
+
+.btn-mason { background: #e74c3c; }
+.btn-mason:hover { background: transparent; border-color: #e74c3c; color: #e74c3c; }
+
