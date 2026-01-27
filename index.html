@@ -51,35 +51,39 @@
             // Find the container that holds the button/status (likely your .card)
             const cardBody = el.parentElement;
 
+            // Find the card container and clean up any old player lists
+            const card = el.closest('.server-card');
+            const oldPlayerList = card.querySelector('.player-toggle-container');
+            if (oldPlayerList) oldPlayerList.remove();
+
             if (data.online) {
-                let playerHtml = "";
+                el.innerHTML = `
+                    <span class="status-dot dot-online"></span>
+                    <span class="text-online">Online</span> 
+                    <small>(${data.players.online}/${data.players.max})</small>`;
                 
                 // Only create toggle if players are actually online
                 if (data.players.list && data.players.list.length > 0) {
                     const names = data.players.list.map(p => p.name_clean).join(', ');
                     const listId = `list-${elementId}`;
                     
-                    playerHtml = `
-                        <a href="javascript:void(0)" class="toggle-players" onclick="toggleDisplay('${listId}')">
-                            + Show Players
-                        </a>
-                        <div id="${listId}" class="player-list">
-                            📋 ${names}
+                    const playerHtml = `
+                        <div class="player-toggle-container">
+                            <a href="javascript:void(0)" class="toggle-players" onclick="toggleDisplay('${listId}')">
+                                + Show Players
+                            </a>
+                            <div id="${listId}" class="player-list">
+                                📋 ${names}
+                            </div>
                         </div>`;
+                    
+                    // Append after the Live Map button
+                    card.insertAdjacentHTML('beforeend', playerHtml);
                 }
-
-                el.innerHTML = `
-                    Status: <span class="status-dot dot-online"></span>
-                    <span class="text-online">Online</span> 
-                    <small>(${data.players.online}/${data.players.max})</small>`;
-                
-                // Append the toggle/list below the status/button area
-                // If you already have the Live Map button, this will appear after it
-                el.insertAdjacentHTML('afterend', playerHtml);
 
             } else {
                 el.innerHTML = `
-                    Status: <span class="status-dot dot-offline"></span>
+                    <span class="status-dot dot-offline"></span>
                     <span class="text-offline">Offline</span>`;
             }
         } catch (error) {
