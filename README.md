@@ -30,4 +30,11 @@
     Docker --- Containers
     Containers --- SSD
     BM --- SSD
-    MC --- BM```
+    MC --- BM
+    classDef edgeNode fill:#1e3a5f,stroke:#3b82f6,stroke-width:2px,color:#fff;
+    classDef computeNode fill:#1a2e05,stroke:#4d7c0f,stroke-width:2px,color:#fff;
+    classDef storageNode fill:#422006,stroke:#b45309,stroke-width:2px,color:#fff;
+
+    class Pi4_Edge edgeNode;
+    class Pi5_Compute computeNode;
+    class Storage storageNode;```

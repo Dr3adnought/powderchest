@@ -2,10 +2,119 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Architecture | Powderchest</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'dark',
+            themeVariables: {
+                fontFamily: 'Inter, sans-serif'
+            },
+            flowchart: {
+                nodeSpacing: 100,
+                rankSpacing: 150,
+                padding: 25,
+                curve: 'basis',
+                useMaxWidth: true
+            }
+        });
+    </script>
+    <style>
+        .system-page {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        nav {
+            margin-bottom: 2rem;
+        }
+        
+        nav a {
+            color: #d4af37;
+            text-decoration: none;
+            font-size: 1.1rem;
+            transition: opacity 0.3s;
+        }
+        
+        nav a:hover {
+            opacity: 0.7;
+        }
+        
+        h1 {
+            font-family: 'PirateFont', Georgia, serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: #d4af37;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .mermaid {
+            background: rgba(26, 26, 26, 0.8);
+            padding: clamp(1rem, 3vw, 2.5rem);
+            border-radius: 12px;
+            border: 2px solid #d4af37;
+            min-height: 400px;
+            overflow-x: auto;
+        }
+        
+        .mermaid svg {
+            max-width: 100%;
+            height: auto;
+            min-height: 600px;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+        }
+        
+        /* Base font size scales with viewport */
+        .mermaid {
+            font-size: clamp(14px, 1.5vw, 20px);
+        }
+        
+        /* Style subgraphs with better colors */
+        .mermaid .cluster rect {
+            fill: rgba(26, 26, 26, 0.6) !important;
+            stroke-width: 2px !important;
+        }
+        
+        /* Responsive breakpoints */
+        @media (min-width: 768px) {
+            .system-page {
+                padding: 3rem 2rem;
+            }
+            
+            .mermaid {
+                font-size: clamp(16px, 1.8vw, 24px);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .system-page {
+                max-width: 1600px;
+                padding: 4rem 3rem;
+            }
+            
+            .mermaid {
+                font-size: clamp(18px, 2vw, 28px);
+            }
+            
+            .mermaid svg {
+                min-height: 700px;
+            }
+        }
+        
+        @media (min-width: 1440px) {
+            .mermaid {
+                font-size: clamp(20px, 2.2vw, 32px);
+            }
+            
+            .mermaid svg {
+                min-height: 800px;
+            }
+        }
+    </style>
 </head>
 <body class="system-page">
     <nav>
@@ -15,38 +124,53 @@
     <h1>The Maritime Architecture</h1>
     
     <div class="mermaid">
-    graph TD
-        subgraph Internet
-            CF[Cloudflare: The Mist]
+    graph LR
+        CF["☁️ Cloudflare CDN<br/>DNS & Edge Protection"]
+        
+        subgraph edge ["🏴‍☠️ The Crow's Nest - Raspberry Pi 4"]
+            direction TB
+            Nginx["⚓ Nginx Reverse Proxy<br/>Port 80/443"]
+            Web["🗺️ Powderchest Dashboard<br/>Status Monitoring"]
         end
-
-        subgraph Pi4_Edge [The Crow's Nest: Raspberry Pi 4]
-            Nginx[Nginx: Harbor Master]
-            Web[Powderchest Dashboard]
+        
+        subgraph compute ["⛵ The Galleon - Raspberry Pi 5"]
+            direction TB
+            Docker["🐋 Docker Engine"]
+            MC["🎮 Minecraft Servers<br/>TheStandard & FakeMas0n"]
+            PH["🛡️ Pi-Hole + Unbound<br/>DNS Filtering"]
+            WG["🔐 WireGuard VPN<br/>Secure Access"]
+            OL["🤖 Ollama AI<br/>LLM Services"]
+            BM["🗺️ BlueMap<br/>Live World Renderer"]
         end
-
-        subgraph Pi5_Compute [The Galleon: Raspberry Pi 5]
-            Docker[Docker Engine]
-            subgraph Containers [The Crew]
-                MC[Minecraft Servers]
-                PH[Pi-Hole / Unbound]
-                WG[WireGuard]
-                OL[Ollama AI]
-            end
-            BM[BlueMap Renderer]
+        
+        subgraph storage ["💰 The Treasure Chest"]
+            SSD[("💾 Samba Share<br/>2TB SSD<br/>World Data & Backups")]
         end
-
-        subgraph Storage [The Treasure Chest]
-            SSD[(Samba SSD)]
-        end
-
-        CF <--> Nginx
-        Nginx <--> Web
-        Web <--> BM
-        Docker --- Containers
-        Containers --- SSD
-        BM --- SSD
-        MC --- BM
+        
+        CF ===|"HTTPS"|Nginx
+        Nginx -.->|"Dashboard"|Web
+        Nginx ===|"Proxy Pass"|MC
+        Nginx ===|"Proxy Pass"|BM
+        
+        Docker -->|"Orchestrates"|MC
+        Docker -->|"Orchestrates"|PH
+        Docker -->|"Orchestrates"|WG
+        Docker -->|"Orchestrates"|OL
+        
+        MC <-->|"Read/Write<br/>World Data"|SSD
+        BM <-->|"Renders<br/>Map Tiles"|SSD
+        
+        classDef cloudNode fill:#1a1a2e,stroke:#00d4ff,stroke-width:4px,color:#00d4ff,font-weight:bold
+        classDef edgeNode fill:#1a3a1a,stroke:#2ecc71,stroke-width:3px,color:#2ecc71,font-weight:bold
+        classDef computeNode fill:#2a1a1a,stroke:#e67e22,stroke-width:3px,color:#e67e22,font-weight:bold
+        classDef storageNode fill:#2a2a1a,stroke:#d4af37,stroke-width:4px,color:#d4af37,font-weight:bold
+        classDef containerNode fill:#1a1a2a,stroke:#9b59b6,stroke-width:2px,color:#c39bd3
+        
+        class CF cloudNode
+        class Nginx,Web edgeNode
+        class Docker,BM computeNode
+        class MC,PH,WG,OL containerNode
+        class SSD storageNode
     </div>
 </body>
 </html>

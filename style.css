@@ -23,14 +23,14 @@ body {
 /* 2. Hero Header */
 .hero {
     text-align: center;
-    padding: 60px 20px 40px;
+    padding: clamp(2rem, 5vw, 3.75rem) clamp(1rem, 3vw, 1.25rem) clamp(1.5rem, 4vw, 2.5rem);
     position: relative;
     z-index: 1;
 }
 
 .brand-title {
     font-family: 'PirateFont', Georgia, serif !important;
-    font-size: 6.5rem;
+    font-size: clamp(3rem, 8vw, 6.5rem);
     margin: 0;
     background: linear-gradient(to bottom, #f1c40f 0%, #d4af37 50%, #8e6d13 100%);
     -webkit-background-clip: text;
@@ -43,10 +43,10 @@ body {
 .brand-subtitle {
     margin-top: -10px;
     text-transform: uppercase;
-    letter-spacing: 6px;
+    letter-spacing: clamp(2px, 0.5vw, 6px);
     color: #666;
     font-weight: 300;
-    font-size: 0.85rem;
+    font-size: clamp(0.65rem, 1.2vw, 0.85rem);
 }
 
 /* 3. Grid & Cards */
@@ -57,20 +57,29 @@ body {
 
 .container {
     display: flex;
-    gap: 30px;
+    gap: clamp(1rem, 3vw, 2rem);
     justify-content: center;
     flex-wrap: wrap;
-    padding: 20px;
+    padding: clamp(1rem, 2vw, 1.25rem);
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 .server-card {
     background: #1a1a1a;
     border: 2px solid #d4af37;
     border-radius: 12px;
-    padding: 30px;
+    padding: clamp(1.5rem, 3vw, 2rem);
     width: 280px;
     text-align: center;
     transition: all 0.3s ease;
+}
+
+@media (max-width: 640px) {
+    .server-card {
+        width: 100%;
+        max-width: 350px;
+    }
 }
 
 .server-card:hover {
@@ -87,8 +96,8 @@ body {
 
 /* 4. Status Styles */
 .status-box {
-    margin: 20px 0;
-    font-size: 0.9rem;
+    margin: clamp(1rem, 2vw, 1.25rem) 0;
+    font-size: clamp(0.85rem, 1.2vw, 0.9rem);
     color: #888;
     display: flex;
     align-items: center;
@@ -119,10 +128,11 @@ body {
 /* 5. Buttons */
 .btn {
     display: inline-block;
-    padding: 12px 24px;
+    padding: clamp(0.7rem, 1.5vw, 0.75rem) clamp(1.2rem, 2vw, 1.5rem);
     text-decoration: none;
     color: white;
     border-radius: 6px;
+    font-size: clamp(0.9rem, 1.2vw, 1rem);
     font-weight: bold;
     border: 2px solid transparent;
     transition: 0.3s;
@@ -135,15 +145,16 @@ body {
     justify-content: center;
     gap: 8px;
     
-    background-color: #2d2d2d !important;
+    background-color: transparent !important;
     border: 2px solid #d4af37 !important;
     color: #d4af37 !important;
     
-    padding: 10px 20px;
-    margin: 20px 0;
+    padding: clamp(0.6rem, 1.5vw, 0.75rem) clamp(1rem, 2vw, 1.25rem);
+    margin: clamp(1rem, 2vw, 1.25rem) 0;
     border-radius: 6px;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
+    font-size: clamp(0.9rem, 1.2vw, 1rem);
     font-weight: bold;
     transition: 0.3s;
 }
@@ -205,3 +216,22 @@ body {
 .btn-mason { background: #e74c3c; }
 .btn-mason:hover { background: transparent; border-color: #e74c3c; color: #e74c3c; }
 
+/* System Architecture Link */
+.system-link {
+    display: inline-block;
+    padding: clamp(0.7rem, 1.5vw, 0.75rem) clamp(1.2rem, 2vw, 1.5rem);
+    text-decoration: none;
+    color: #d4af37;
+    border: 2px solid #d4af37;
+    background: transparent;
+    border-radius: 6px;
+    font-size: clamp(0.9rem, 1.2vw, 1rem);
+    font-weight: bold;
+    margin: 20px 0;
+    transition: 0.3s;
+}
+
+.system-link:hover {
+    background: #d4af37;
+    color: #000;
+}
