@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>System Architecture | Powderchest</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+</head>
+<body class="system-page">
+    <nav>
+        <a href="index.html">← Return to Dashboard</a>
+    </nav>
+    
+    <h1>The Maritime Architecture</h1>
+    
+    <div class="mermaid">
+    graph TD
+        subgraph Internet
+            CF[Cloudflare: The Mist]
+        end
+
+        subgraph Pi4_Edge [The Crow's Nest: Raspberry Pi 4]
+            Nginx[Nginx: Harbor Master]
+            Web[Powderchest Dashboard]
+        end
+
+        subgraph Pi5_Compute [The Galleon: Raspberry Pi 5]
+            Docker[Docker Engine]
+            subgraph Containers [The Crew]
+                MC[Minecraft Servers]
+                PH[Pi-Hole / Unbound]
+                WG[WireGuard]
+                OL[Ollama AI]
+            end
+            BM[BlueMap Renderer]
+        end
+
+        subgraph Storage [The Treasure Chest]
+            SSD[(Samba SSD)]
+        end
+
+        CF <--> Nginx
+        Nginx <--> Web
+        Web <--> BM
+        Docker --- Containers
+        Containers --- SSD
+        BM --- SSD
+        MC --- BM
+    </div>
+</body>
+</html>
