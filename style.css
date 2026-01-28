@@ -9,19 +9,224 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background: #0f0f0f;
+    background: #050a14;
     color: #f0f0f0;
     margin: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Night Sky */
+.night-sky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, 
+        #020409 0%,
+        #0a0f1a 20%,
+        #0d1523 40%,
+        #10192d 60%,
+        #0d1626 100%
+    );
+    z-index: -100;
+}
+
+/* Moon */
+.moon {
+    position: absolute;
+    top: 15%;
+    right: 25%;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #f4f1de 0%, #d4cdb8 50%, #9c927a 100%);
+    box-shadow: 
+        0 0 40px rgba(244, 241, 222, 0.6),
+        0 0 80px rgba(244, 241, 222, 0.3),
+        inset -8px -8px 15px rgba(0, 0, 0, 0.3);
+    animation: moon-glow 8s ease-in-out infinite;
+}
+
+@keyframes moon-glow {
+    0%, 100% { 
+        box-shadow: 
+            0 0 40px rgba(244, 241, 222, 0.6),
+            0 0 80px rgba(244, 241, 222, 0.3),
+            inset -8px -8px 15px rgba(0, 0, 0, 0.3);
+    }
+    50% { 
+        box-shadow: 
+            0 0 50px rgba(244, 241, 222, 0.7),
+            0 0 100px rgba(244, 241, 222, 0.4),
+            inset -8px -8px 15px rgba(0, 0, 0, 0.3);
+    }
+}
+
+/* Stars */
+.stars {
+    position: absolute;
+    width: 100%;
+    height: 70%;
+    top: 0;
+    left: 0;
+    background-image: 
+        radial-gradient(2px 2px at 20% 30%, white, transparent),
+        radial-gradient(2px 2px at 60% 70%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, white, transparent),
+        radial-gradient(1px 1px at 80% 10%, white, transparent),
+        radial-gradient(2px 2px at 90% 60%, white, transparent),
+        radial-gradient(1px 1px at 33% 80%, white, transparent),
+        radial-gradient(1px 1px at 15% 60%, white, transparent),
+        radial-gradient(2px 2px at 70% 25%, white, transparent),
+        radial-gradient(1px 1px at 40% 15%, white, transparent),
+        radial-gradient(1px 1px at 85% 40%, white, transparent);
+    background-repeat: repeat;
+    background-size: 800px 800px, 900px 900px, 700px 700px, 1000px 1000px, 850px 850px,
+                     750px 750px, 950px 950px, 650px 650px, 1100px 1100px, 600px 600px;
+    opacity: 0.4;
+    animation: twinkle 10s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.6; }
+}
+
+/* Ocean */
+.ocean {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -50;
+    background: linear-gradient(to bottom,
+        transparent 0%,
+        rgba(5, 10, 18, 0.3) 40%,
+        rgba(8, 15, 25, 0.7) 55%,
+        #0a1420 70%,
+        #08111c 100%
+    );
+}
+
+/* Wave layers with realistic crests */
+.wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    background-repeat: repeat-x;
+}
+
+.wave1 {
+    background-image: 
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0%,
+            transparent 3%,
+            rgba(180, 190, 200, 0.4) 3.5%,
+            rgba(200, 210, 220, 0.5) 4%,
+            rgba(180, 190, 200, 0.3) 4.5%,
+            transparent 5%,
+            transparent 10%
+        );
+    background-size: 100% 80px;
+    background-position: 0 45%;
+    animation: wave-motion1 12s linear infinite;
+    opacity: 0.7;
+}
+
+.wave2 {
+    background-image: 
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0%,
+            transparent 4%,
+            rgba(160, 175, 190, 0.35) 4.5%,
+            rgba(190, 205, 215, 0.45) 5%,
+            rgba(160, 175, 190, 0.3) 5.5%,
+            transparent 6%,
+            transparent 12%
+        );
+    background-size: 100% 95px;
+    background-position: 0 48%;
+    animation: wave-motion2 15s linear infinite;
+    opacity: 0.6;
+}
+
+.wave3 {
+    background-image: 
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0%,
+            transparent 3.5%,
+            rgba(170, 180, 195, 0.3) 4%,
+            rgba(195, 205, 220, 0.4) 4.5%,
+            rgba(170, 180, 195, 0.25) 5%,
+            transparent 5.5%,
+            transparent 11%
+        );
+    background-size: 100% 110px;
+    background-position: 0 50%;
+    animation: wave-motion3 18s linear infinite;
+    opacity: 0.5;
+}
+
+.wave4 {
+    background-image: 
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0%,
+            transparent 4.5%,
+            rgba(150, 165, 180, 0.25) 5%,
+            rgba(180, 195, 210, 0.35) 5.5%,
+            rgba(150, 165, 180, 0.2) 6%,
+            transparent 6.5%,
+            transparent 13%
+        );
+    background-size: 100% 130px;
+    background-position: 0 52%;
+    animation: wave-motion4 21s linear infinite;
+    opacity: 0.4;
+}
+
+@keyframes wave-motion1 {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(80px); }
+}
+
+@keyframes wave-motion2 {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(95px); }
+}
+
+@keyframes wave-motion3 {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(110px); }
+}
+
+@keyframes wave-motion4 {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(130px); }
+}
+@keyframes wave-motion4 {
+    0% { transform: translateX(0) translateY(0); }
+    100% { transform: translateX(-50%) translateY(-10px); }
 }
 
 /* 2. Hero Header */
 .hero {
     text-align: center;
     padding: 60px 20px 40px;
+    position: relative;
+    z-index: 1;
 }
 
 .brand-title {
@@ -46,6 +251,11 @@ body {
 }
 
 /* 3. Grid & Cards */
+.main-content {
+    position: relative;
+    z-index: 1;
+}
+
 .container {
     display: flex;
     gap: 30px;
