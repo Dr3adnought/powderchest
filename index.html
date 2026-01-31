@@ -46,7 +46,128 @@
         </a>
     </div>
 
+    <div class="ships-log">
+        <h3>⚓ Ship's Log</h3>
+        <div class="log-stats">
+            <div class="stat-item">
+                <span class="stat-icon">👥</span>
+                <span class="stat-label">All Souls Aboard:</span>
+                <span id="total-visitors" class="stat-value">--</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-icon">🎮</span>
+                <span class="stat-label">Crew Members:</span>
+                <span id="crew-count" class="stat-value">--</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-icon">🗺️</span>
+                <span class="stat-label">Wandering Souls:</span>
+                <span id="wanderer-count" class="stat-value">--</span>
+            </div>
+        </div>
+        <button id="crew-btn" class="crew-btn" onclick="joinCrew()">
+            ⚔️ I'm Part of the Crew
+        </button>
+    </div>
+
     <script>
+    // ========== VISITOR COUNTER API ==========
+    const API_URL = 'http://localhost:5000/api'; // Update this to your actual API URL
+    
+    // Generate a simple browser fingerprint for unique visitor tracking
+    function getBrowserFingerprint() {
+        const nav = navigator;
+        const screen = window.screen;
+        const fingerprint = [
+            nav.userAgent,
+            nav.language,
+            screen.colorDepth,
+            screen.width + 'x' + screen.height,
+            new Date().getTimezoneOffset()
+        ].join('|');
+        
+        // Simple hash function
+        let hash = 0;
+        for (let i = 0; i < fingerprint.length; i++) {
+            const char = fingerprint.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return Math.abs(hash).toString(36);
+    }
+
+    // Track visitor and update counts
+    async function trackVisitor() {
+        const visitorId = getBrowserFingerprint();
+        const isCrew = localStorage.getItem('isCrew') === 'true';
+        
+        try {
+            const response = await fetch(`${API_URL}/visit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ visitorId, isCrew })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                updateCounters(data);
+            }
+        } catch (error) {
+            console.log('Visitor tracking unavailable:', error);
+            // Show placeholder if API is down
+            document.getElementById('total-visitors').textContent = '⚓';
+            document.getElementById('crew-count').textContent = '⚓';
+            document.getElementById('wanderer-count').textContent = '⚓';
+        }
+    }
+
+    // Join the crew
+    async function joinCrew() {
+        const visitorId = getBrowserFingerprint();
+        localStorage.setItem('isCrew', 'true');
+        
+        try {
+            const response = await fetch(`${API_URL}/join-crew`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ visitorId })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                updateCounters(data);
+                
+                // Update button
+                const btn = document.getElementById('crew-btn');
+                btn.textContent = '⚓ Welcome Aboard, Matey!';
+                btn.disabled = true;
+                btn.style.opacity = '0.6';
+                btn.style.cursor = 'not-allowed';
+            }
+        } catch (error) {
+            console.log('Could not join crew:', error);
+        }
+    }
+
+    // Update the counter displays
+    function updateCounters(data) {
+        document.getElementById('total-visitors').textContent = data.total;
+        document.getElementById('crew-count').textContent = data.crew;
+        document.getElementById('wanderer-count').textContent = data.wanderers;
+    }
+
+    // Check if already crew member on page load
+    function checkCrewStatus() {
+        if (localStorage.getItem('isCrew') === 'true') {
+            const btn = document.getElementById('crew-btn');
+            btn.textContent = '⚓ Welcome Aboard, Matey!';
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+        }
+    }
+
+    // ========== SERVER STATUS LOGIC ==========
     // 1. The Core Logic: Fetches data for a specific server
     async function checkStatus(elementId, domain) {
         try {
@@ -132,7 +253,11 @@
     }
 
     // 3. Init: Run immediately when the page loads
-    window.onload = updateAllStatuses;
+    window.onload = function() {
+        checkCrewStatus();
+        trackVisitor();
+        updateAllStatuses();
+    };
 </script>
 </body>
 </html>

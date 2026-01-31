@@ -235,3 +235,82 @@ body {
     background: #d4af37;
     color: #000;
 }
+/* ========== VISITOR COUNTER / SHIP'S LOG ========== */
+.ships-log {
+    background: rgba(20, 20, 20, 0.85);
+    border: 2px solid #d4af37;
+    border-radius: 12px;
+    padding: clamp(1.25rem, 2.5vw, 2rem);
+    margin: 0 1rem 2rem 1rem;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+}
+
+.ships-log h3 {
+    font-family: 'PirateFont', Georgia, serif;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    color: #d4af37;
+    margin: 0 0 1.25rem 0;
+    text-transform: lowercase;
+}
+
+.log-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    font-size: clamp(0.9rem, 1.1vw, 1rem);
+}
+
+.stat-icon {
+    font-size: 1.25em;
+}
+
+.stat-label {
+    color: #ccc;
+}
+
+.stat-value {
+    font-weight: bold;
+    color: #d4af37;
+    font-size: 1.1em;
+    min-width: 3ch;
+}
+
+.crew-btn {
+    all: unset;
+    display: inline-block;
+    padding: clamp(0.7rem, 1.5vw, 0.85rem) clamp(1.2rem, 2vw, 1.75rem);
+    background: transparent;
+    border: 2px solid #d4af37;
+    color: #d4af37;
+    border-radius: 6px;
+    font-size: clamp(0.9rem, 1.1vw, 1rem);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.crew-btn:hover:not(:disabled) {
+    background: #d4af37;
+    color: #000;
+    transform: translateY(-2px);
+}
+
+.crew-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
