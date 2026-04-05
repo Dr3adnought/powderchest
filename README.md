@@ -2,6 +2,7 @@
 graph TB
     Internet[("🌐<br/>Internet<br/>Users")]
     CF[("☁️<br/>Cloudflare<br/>CDN")]
+    Discord[("🎮<br/>Discord<br/>Platform")]
     
     subgraph pi4 ["🏴‍☠️<br/>RPi 4<br/>Edge Server"]
         direction LR
@@ -13,23 +14,16 @@ graph TB
     
     subgraph pi5 ["⛵<br/>RPi 5<br/>Compute Server"]
         Docker[["🐋<br/>Docker<br/>Engine"]]
-        
-        subgraph containers ["Containers"]
             MC1["🎮<br/>TheStandard<br/>MC Server"]
             MC2["🎮<br/>FakeMas0n<br/>MC Server"]
             PH["🛡️<br/>Pi-Hole<br/>DNS Sinkhole"]
             Unbound["🔒<br/>Unbound<br/>DNS Resolver"]
             WG["🔐<br/>WireGuard<br/>VPN Tunnel"]
             Ollama["🤖<br/>Ollama<br/>AI/LLM"]
-        end
-        
-        BMRender["🗺️<br/>BlueMap<br/>Renderer"]
-    end
+            SkyNet["🤖<br/>SkyNet<br/>Discord Bot"]
+            WebUI["🖥️<br/>Open WebUI<br/>LLM Interface"]
     
-    subgraph storage ["💰 Network<br/>Storage"]
-        spacer_storage["<br/><br/><br/><br/>"]
-        SSD[("💾<br/>Samba Share<br/>2TB SSD<br/>World Data<br/>Map Tiles<br/>Images")]
-    end
+    HDD[("💾<br/>4TB HDD<br/>ext4 + Samba NAS<br/>World/Maps/Images<br/>Docker AppData")]
     
     subgraph legend ["📋 Key"]
         direction TB
@@ -43,34 +37,41 @@ graph TB
         L8["━━━ Data Flow"]
     end
     
+    %% SkyNet <-> Discord
+    SkyNet <-->|"Bot Events"|Discord
+    
     %% Internet flow
     Internet -->|"HTTPS"|CF
     CF -->|"Protected"|Nginx
     
     %% Nginx routing
-    Nginx -->|"Monitors"|Dashboard
-    Nginx -.->|"Proxy"|MC1
-    Nginx -.->|"Proxy"|MC2
-    Nginx -.->|"Serves"|SSD
-    Nginx -.->|"Serves"|SSD
+    Nginx -->Dashboard
+    Nginx -.->MC1
+    Nginx -.->MC2
+    Nginx -.->WebUI
+    Nginx -.->|"Serves"|HDD
     
     %% Docker orchestration
-    Docker ==>|"Manages"|MC1
-    Docker ==>|"Manages"|MC2
-    Docker ==>|"Manages"|PH
-    Docker ==>|"Manages"|Unbound
-    Docker ==>|"Manages"|WG
-    Docker ==>|"Manages"|Ollama
+    Docker ==>MC1
+    Docker ==>MC2
+    Docker ==>PH
+    Docker ==>Unbound
+    Docker ==>WG
+    Docker ==>Ollama
+    Docker ==>SkyNet
+    Docker ==>WebUI
     
     %% Home network services
-    PH <-->|"Filters"|Unbound
-    Unbound <-->|"Routes"|WG
+    PH <-->Unbound
+    Unbound <-->WG
+    WebUI <-->|"LLM API"|Ollama
     
     %% Storage connections
-    MC1 <-->|"Read/Write<br/>World Data"|SSD
-    MC2 <-->|"Read/Write<br/>World Data"|SSD
-    BMRender -->|"Writes<br/>Map Tiles"|SSD
-    SSD -->|"Reads<br/>World Data"|BMRender
+    Docker ==>|"Mounts<br/>/app-data"|HDD
+    MC1 <-->HDD
+    MC2 <-->HDD
+    BMRender -->|"Map Writes"|HDD
+    HDD -->|"World Reads"|BMRender
     
     %% Styling
     classDef cloudStyle fill:#1a1a2e,stroke:#00d4ff,stroke-width:4px,color:#00d4ff,font-weight:bold
@@ -81,11 +82,11 @@ graph TB
     classDef orchestratorStyle fill:#1a1a2e,stroke:#3498db,stroke-width:3px,color:#3498db,font-weight:bold
     classDef legendStyle fill:#1a1a2e,stroke:#555,stroke-width:1px,color:#999,font-size:40px
     
-    class Internet,CF cloudStyle
+    class Internet,CF,Discord cloudStyle
     class Nginx proxyStyle
     class Dashboard,BMRender appStyle
     class Docker orchestratorStyle
-    class MC1,MC2,PH,Unbound,WG,Ollama containerStyle
-    class SSD storageStyle
+    class MC1,MC2,PH,Unbound,WG,Ollama,SkyNet,WebUI containerStyle
+    class HDD storageStyle
     class L1,L2,L3,L4,L5,L6,L7,L8 legendStyle
 ```

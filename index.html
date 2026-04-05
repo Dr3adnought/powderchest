@@ -56,10 +56,14 @@
                 <span class="stat-label">All Souls Aboard:</span>
                 <span id="total-visitors" class="stat-value">--</span>
             </div>
-            <div class="stat-item">
+            <div class="stat-item crew-stat" id="crew-stat-item">
                 <span class="stat-icon">🎮</span>
                 <span class="stat-label">Crew Members:</span>
-                <span id="crew-count" class="stat-value">--</span>
+                <span id="crew-count" class="stat-value" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="crew-popover">--</span>
+                <div id="crew-popover" class="crew-popover" aria-hidden="true">
+                    <div class="crew-popover-title">Crew Aboard</div>
+                    <div id="crew-popover-content" class="crew-popover-content">No crew members checked in yet.</div>
+                </div>
             </div>
             <div class="stat-item">
                 <span class="stat-icon">🗺️</span>
@@ -194,7 +198,13 @@
     };
 
     // ========== VISITOR COUNTER API ==========
-    const API_URL = 'http://localhost:5000/api'; // Update this to your actual API URL
+    function resolveApiUrl() {
+        const hostname = window.location.hostname;
+        const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+        return isLocal ? 'http://localhost:5000/api' : `${window.location.origin}/api`;
+    }
+
+    const API_URL = resolveApiUrl();
     
     // Generate a simple browser fingerprint for unique visitor tracking
     function getBrowserFingerprint() {
@@ -222,12 +232,13 @@
     async function trackVisitor() {
         const visitorId = getBrowserFingerprint();
         const isCrew = localStorage.getItem('isCrew') === 'true';
+        const crewName = localStorage.getItem('crewName') || '';
         
         try {
             const response = await fetch(`${API_URL}/visit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ visitorId, isCrew })
+                body: JSON.stringify({ visitorId, isCrew, crewName })
             });
             
             if (response.ok) {
@@ -240,19 +251,37 @@
             document.getElementById('total-visitors').textContent = '⚓';
             document.getElementById('crew-count').textContent = '⚓';
             document.getElementById('wanderer-count').textContent = '⚓';
+            document.getElementById('crew-count').title = 'Visitor API offline';
         }
     }
 
     // Join the crew
     async function joinCrew() {
         const visitorId = getBrowserFingerprint();
+        const existingName = localStorage.getItem('crewName') || '';
+        let crewName = existingName;
+
+        if (!crewName) {
+            const provided = prompt('What should we call you in the crew roster?');
+            if (provided === null) {
+                return;
+            }
+            crewName = provided.trim();
+            if (!crewName) {
+                alert('A crew name is required to join the roster.');
+                return;
+            }
+            crewName = crewName.slice(0, 32);
+            localStorage.setItem('crewName', crewName);
+        }
+
         localStorage.setItem('isCrew', 'true');
         
         try {
             const response = await fetch(`${API_URL}/join-crew`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ visitorId })
+                body: JSON.stringify({ visitorId, crewName })
             });
             
             if (response.ok) {
@@ -271,11 +300,145 @@
         }
     }
 
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function setCrewPopover(crewMembers, crewCount) {
+        const contentEl = document.getElementById('crew-popover-content');
+        const crewCountEl = document.getElementById('crew-count');
+        if (!contentEl || !crewCountEl) return;
+
+        if (crewMembers.length > 0) {
+            const listItems = crewMembers
+                .map((name) => `<li>${escapeHtml(name)}</li>`)
+                .join('');
+            contentEl.innerHTML = `<ul>${listItems}</ul>`;
+            crewCountEl.title = `Crew aboard: ${crewMembers.join(', ')}`;
+        } else if (Number(crewCount) > 0) {
+            contentEl.textContent = 'Crew members are aboard, but names are not set yet.';
+            crewCountEl.title = 'Crew members are aboard, but names are not set yet.';
+        } else {
+            contentEl.textContent = 'No crew members checked in yet.';
+            crewCountEl.title = 'No crew members checked in yet.';
+        }
+    }
+
+    function showCrewPopover() {
+        const popover = document.getElementById('crew-popover');
+        const crewCountEl = document.getElementById('crew-count');
+        if (!popover || !crewCountEl) return;
+
+        popover.classList.add('visible');
+        popover.setAttribute('aria-hidden', 'false');
+        crewCountEl.setAttribute('aria-expanded', 'true');
+    }
+
+    function hideCrewPopover() {
+        const popover = document.getElementById('crew-popover');
+        const crewCountEl = document.getElementById('crew-count');
+        if (!popover || !crewCountEl) return;
+
+        popover.classList.remove('visible');
+        popover.setAttribute('aria-hidden', 'true');
+        crewCountEl.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleCrewPopover() {
+        const popover = document.getElementById('crew-popover');
+        if (!popover) return;
+
+        if (popover.classList.contains('visible')) {
+            hideCrewPopover();
+        } else {
+            showCrewPopover();
+        }
+    }
+
+    function initCrewPopoverInteractions() {
+        const crewCountEl = document.getElementById('crew-count');
+        const crewStatItem = document.getElementById('crew-stat-item');
+        if (!crewCountEl || !crewStatItem) return;
+
+        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+        let longPressTimer = null;
+        let suppressNextTouchClick = false;
+
+        crewCountEl.addEventListener('mouseenter', showCrewPopover);
+        crewStatItem.addEventListener('mouseleave', hideCrewPopover);
+        crewCountEl.addEventListener('focus', showCrewPopover);
+
+        if (isTouchDevice) {
+            crewCountEl.addEventListener('touchstart', (event) => {
+                if (event.touches.length !== 1) return;
+                clearTimeout(longPressTimer);
+                suppressNextTouchClick = false;
+                longPressTimer = setTimeout(() => {
+                    showCrewPopover();
+                    suppressNextTouchClick = true;
+                }, 500);
+            }, { passive: true });
+
+            const clearTouchTimer = () => {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+            };
+
+            crewCountEl.addEventListener('touchend', clearTouchTimer, { passive: true });
+            crewCountEl.addEventListener('touchcancel', clearTouchTimer, { passive: true });
+        }
+
+        crewCountEl.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (isTouchDevice) {
+                if (suppressNextTouchClick) {
+                    suppressNextTouchClick = false;
+                }
+                return;
+            }
+
+            toggleCrewPopover();
+        });
+        crewCountEl.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleCrewPopover();
+            } else if (event.key === 'Escape') {
+                hideCrewPopover();
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!crewStatItem.contains(event.target)) {
+                hideCrewPopover();
+            }
+        });
+    }
+
     // Update the counter displays
     function updateCounters(data) {
         document.getElementById('total-visitors').textContent = data.total;
         document.getElementById('crew-count').textContent = data.crew;
         document.getElementById('wanderer-count').textContent = data.wanderers;
+
+        const crewCountEl = document.getElementById('crew-count');
+        const crewMembers = Array.isArray(data.crewMembers) ? data.crewMembers : [];
+        setCrewPopover(crewMembers, data.crew);
+
+        if (crewMembers.length > 0) {
+            crewCountEl.classList.add('has-crew-names');
+        } else {
+            crewCountEl.classList.remove('has-crew-names');
+        }
     }
 
     // Check if already crew member on page load
@@ -377,6 +540,7 @@
     // 3. Init: Run immediately when the page loads
     window.onload = function() {
         initLiveBackground(); // Start the waves
+        initCrewPopoverInteractions();
         checkCrewStatus();
         trackVisitor();
         updateAllStatuses();

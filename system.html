@@ -7,11 +7,11 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js?v=2"></script>
     <script>
-        mermaid.initialize({ 
-            startOnLoad: true, 
+        const mermaidConfig = {
+            startOnLoad: false,
             theme: 'dark',
             themeVariables: {
-                fontSize: '40px',
+                fontSize: '24px',
                 fontFamily: 'Inter, sans-serif',
                 primaryColor: '#1a1a2e',
                 primaryTextColor: '#ffffff',
@@ -24,11 +24,31 @@
             flowchart: {
                 useMaxWidth: true,
                 htmlLabels: true,
-                nodeSpacing: 200,
-                rankSpacing: 250,
-                padding: 100,
+                nodeSpacing: 90,
+                rankSpacing: 100,
+                padding: 30,
                 curve: 'basis'
             }
+        };
+
+        mermaid.initialize(mermaidConfig);
+
+        // Load diagram from canonical source file rather than duplicating it here
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('graph TB.mmd')
+                .then(r => {
+                    if (!r.ok) throw new Error('Failed to load graph TB.mmd: ' + r.status);
+                    return r.text();
+                })
+                .then(async diagramText => {
+                    const container = document.getElementById('mermaid-container');
+                    const { svg } = await mermaid.render('mermaid-diagram', diagramText);
+                    container.innerHTML = svg;
+                })
+                .catch(err => {
+                    document.getElementById('mermaid-container').innerHTML =
+                        `<p style="color:#e74c3c;padding:1rem;">⚠️ Could not load diagram: ${err.message}</p>`;
+                });
         });
     </script>
     <style>
@@ -57,7 +77,7 @@
     /* REPLACE THESE: The New Optimized Mermaid Styles */
     .mermaid {
         background: rgba(10, 10, 10, 0.9);
-        padding: 40px; 
+        padding: 24px;
         border-radius: 20px;
         border: 3px solid #d4af37;
         overflow-x: auto;
@@ -68,36 +88,53 @@
 
     .mermaid svg {
         width: 100% !important;
+        max-width: 100% !important;
         height: auto !important;
-        min-height: 1200px;
+        min-height: 760px;
     }
 
     /* Readable text */
     .mermaid .node text {
-        font-size: 44px !important;
+        font-size: 26px !important;
+        font-weight: 600 !important;
+    }
+
+    /* Mermaid uses htmlLabels in foreignObject blocks; style those explicitly */
+    .mermaid .nodeLabel,
+    .mermaid .label foreignObject div,
+    .mermaid .label foreignObject span {
+        font-size: 24px !important;
+        line-height: 1.2 !important;
         font-weight: 600 !important;
     }
     
     /* Legend items - smaller text */
     .mermaid g[id*="flowchart-legend"] .node text,
     .mermaid g[id*="L"] .node text {
-        font-size: 40px !important;
+        font-size: 20px !important;
     }
     
     .mermaid .edgeLabel {
         background-color: rgba(0, 0, 0, 0.95) !important;
-        padding: 10px 16px !important;
-        font-size: 30px !important;
+        padding: 8px 12px !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+    }
+
+    .mermaid .edgeLabel foreignObject div,
+    .mermaid .edgeLabel foreignObject span {
+        font-size: 18px !important;
+        line-height: 1.15 !important;
         font-weight: 600 !important;
     }
 
     /* Subgraph titles */
     .cluster-label span {
         font-family: 'PirateFont', Georgia, serif !important;
-        font-size: 60px !important;
+        font-size: 34px !important;
         color: #d4af37 !important;
         font-weight: bold !important;
-        padding: 20px !important;
+        padding: 10px !important;
     }
     
     /* Subgraph backgrounds - transparent/translucent */
@@ -123,6 +160,48 @@
         }
     }
 
+    @media (max-width: 768px) {
+        .mermaid {
+            padding: 14px;
+        }
+
+        .mermaid svg {
+            width: 100% !important;
+            min-height: 680px;
+        }
+
+        .mermaid .node text {
+            font-size: 16px !important;
+        }
+
+        .mermaid .nodeLabel,
+        .mermaid .label foreignObject div,
+        .mermaid .label foreignObject span {
+            font-size: 16px !important;
+            line-height: 1.2 !important;
+        }
+
+        .mermaid g[id*="flowchart-legend"] .node text,
+        .mermaid g[id*="L"] .node text {
+            font-size: 14px !important;
+        }
+
+        .mermaid .edgeLabel {
+            font-size: 13px !important;
+            padding: 4px 8px !important;
+        }
+
+        .mermaid .edgeLabel foreignObject div,
+        .mermaid .edgeLabel foreignObject span {
+            font-size: 13px !important;
+        }
+
+        .cluster-label span {
+            font-size: 22px !important;
+            padding: 4px 8px !important;
+        }
+    }
+
     </style>
 </head>
 <body class="system-page">
@@ -132,96 +211,7 @@
     
     <h1>The Maritime Architecture</h1>
     
-    <div class="mermaid">
-    graph TB
-        Internet[("🌐<br/>Internet<br/>Users")]
-        CF[("☁️<br/>Cloudflare<br/>CDN")]
-        
-        subgraph pi4 ["🏴‍☠️<br/>RPi 4<br/>Edge Server"]
-            direction LR
-            spacer_left["<br/><br/><br/><br/>"]
-            Nginx{"⚓<br/>Nginx<br/>Reverse Proxy<br/>:80/:443"}
-            Dashboard["🗺️<br/>Powderchest<br/>Dashboard"]
-            spacer_left ~~~ Nginx
-        end
-        
-        subgraph pi5 ["⛵<br/>RPi 5<br/>Compute Server"]
-            Docker[["🐋<br/>Docker<br/>Engine"]]
-            
-            subgraph containers ["Containers"]
-                MC1["🎮<br/>TheStandard<br/>MC Server"]
-                MC2["🎮<br/>FakeMas0n<br/>MC Server"]
-                PH["🛡️<br/>Pi-Hole<br/>DNS Sinkhole"]
-                Unbound["🔒<br/>Unbound<br/>DNS Resolver"]
-                WG["🔐<br/>WireGuard<br/>VPN Tunnel"]
-                Ollama["🤖<br/>Ollama<br/>AI/LLM"]
-            end
-            
-            BMRender["🗺️<br/>BlueMap<br/>Renderer"]
-        end
-        
-        subgraph storage ["💰 Network<br/>Storage"]
-            spacer_storage["<br/><br/><br/><br/>"]
-            SSD[("💾<br/>Samba Share<br/>2TB SSD<br/>World Data<br/>Map Tiles<br/>Images")]
-        end
-        
-        subgraph legend ["📋 Key"]
-            direction TB
-            L1[("External Service")]
-            L2{"Network/Proxy"}
-            L3["Application"]
-            L4[["Orchestrator"]]
-            L5[("Storage/Database")]
-            L6["─── Synchronous"]
-            L7["─ ─ Proxy/Async"]
-            L8["━━━ Data Flow"]
-        end
-        
-        %% Internet flow
-        Internet -->|"HTTPS"|CF
-        CF -->|"Protected"|Nginx
-        
-        %% Nginx routing
-        Nginx -->|"Monitors"|Dashboard
-        Nginx -.->|"Proxy"|MC1
-        Nginx -.->|"Proxy"|MC2
-        Nginx -.->|"Serves"|SSD
-        Nginx -.->|"Serves"|SSD
-        
-        %% Docker orchestration
-        Docker ==>|"Manages"|MC1
-        Docker ==>|"Manages"|MC2
-        Docker ==>|"Manages"|PH
-        Docker ==>|"Manages"|Unbound
-        Docker ==>|"Manages"|WG
-        Docker ==>|"Manages"|Ollama
-        
-        %% Home network services
-        PH <-->|"Filters"|Unbound
-        Unbound <-->|"Routes"|WG
-        
-        %% Storage connections
-        MC1 <-->|"Read/Write<br/>World Data"|SSD
-        MC2 <-->|"Read/Write<br/>World Data"|SSD
-        BMRender -->|"Writes<br/>Map Tiles"|SSD
-        SSD -->|"Reads<br/>World Data"|BMRender
-        
-        %% Styling
-        classDef cloudStyle fill:#1a1a2e,stroke:#00d4ff,stroke-width:4px,color:#00d4ff,font-weight:bold
-        classDef proxyStyle fill:#1a1a2e,stroke:#2ecc71,stroke-width:4px,color:#2ecc71,font-weight:bold
-        classDef appStyle fill:#1a1a2e,stroke:#e67e22,stroke-width:3px,color:#e67e22,font-weight:bold
-        classDef containerStyle fill:#1a1a2e,stroke:#9b59b6,stroke-width:2px,color:#c39bd3
-        classDef storageStyle fill:#1a1a2e,stroke:#d4af37,stroke-width:4px,color:#d4af37,font-weight:bold
-        classDef orchestratorStyle fill:#1a1a2e,stroke:#3498db,stroke-width:3px,color:#3498db,font-weight:bold
-        classDef legendStyle fill:#1a1a2e,stroke:#555,stroke-width:1px,color:#999,font-size:40px
-        
-        class Internet,CF cloudStyle
-        class Nginx proxyStyle
-        class Dashboard,BMRender appStyle
-        class Docker orchestratorStyle
-        class MC1,MC2,PH,Unbound,WG,Ollama containerStyle
-        class SSD storageStyle
-        class L1,L2,L3,L4,L5,L6,L7,L8 legendStyle
-    </div>
+    <!-- Diagram loaded dynamically from graph TB.mmd — edit that file, not here -->
+    <div id="mermaid-container" class="mermaid"></div>
 </body>
 </html>
