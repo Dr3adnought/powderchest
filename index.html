@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PowderChest | Home Lab & Servers</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.2/pixi.min.js"></script>
     <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
+    <div id="canvas-container"></div>
 
     <div class="hero">
         <h1 class="brand-title">powder chest</h1>
@@ -27,7 +29,7 @@
                 <div class="status-box">
                     Status: <span id="standard-status">Checking...</span>
                 </div>
-                <a href="http://thestandard.powderchest.com" class="btn btn-standard">Live Map</a>
+                <a href="http://thestandard.powderchest.com" class="btn btn-standard">Treasure Map</a>
             </div>
 
             <div class="server-card">
@@ -35,7 +37,7 @@
                 <div class="status-box">
                     Status: <span id="teen-status">Checking...</span>
                 </div>
-                <a href="http://fakemas0n.powderchest.com" class="btn btn-mason">Live Map</a>
+                <a href="http://fakemas0n.powderchest.com" class="btn btn-mason">Treasure Map</a>
             </div>
         </div>
     </div>
@@ -71,6 +73,126 @@
     </div>
 
     <script>
+        // ========== PIXIJS LIVE BACKGROUND ==========
+    const initLiveBackground = () => {
+        // Create PixiJS app (v7 syntax)
+        const app = new PIXI.Application({
+            width: window.innerWidth,
+            height: window.innerHeight,
+            resolution: window.devicePixelRatio || 1,
+            autoDensity: true,
+            backgroundColor: 0x000000,
+        });
+        
+        const container = document.body.querySelector('#canvas-container');
+        container.appendChild(app.view);
+        
+        // CRITICAL: Force the canvas to not create layout space
+        app.view.style.position = 'fixed';
+        app.view.style.top = '0';
+        app.view.style.left = '0';
+        app.view.style.width = '100%';
+        app.view.style.height = '100%';
+        app.view.style.zIndex = '-1';
+        app.view.style.pointerEvents = 'none';
+
+        console.log('PixiJS v7 initialized');
+
+        // Load ocean background texture
+        const backgroundTexture = PIXI.Texture.from('night_ocean.png');
+        
+        // Create TWO sprites from the same image
+        // One for the static sky, one for the animated water
+        const staticSky = new PIXI.Sprite(backgroundTexture);
+        staticSky.width = app.screen.width;
+        staticSky.height = app.screen.height;
+        app.stage.addChild(staticSky);
+        
+        const animatedWater = new PIXI.Sprite(backgroundTexture);
+        animatedWater.width = app.screen.width;
+        animatedWater.height = app.screen.height;
+        app.stage.addChild(animatedWater);
+        
+        // Create a mask that only shows the bottom 60% (water portion)
+        const waterMask = new PIXI.Graphics();
+        waterMask.beginFill(0xffffff);
+        waterMask.drawRect(0, app.screen.height * 0.5, app.screen.width, app.screen.height * 0.6);
+        waterMask.endFill();
+        app.stage.addChild(waterMask);
+        animatedWater.mask = waterMask;
+
+        console.log('Sky & water layers created');
+
+        // Generate noise texture procedurally
+        function createNoiseTexture(width, height) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.createImageData(width, height);
+            
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                const value = Math.random() * 255;
+                imageData.data[i] = value;
+                imageData.data[i + 1] = value;
+                imageData.data[i + 2] = value;
+                imageData.data[i + 3] = 255;
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            return PIXI.Texture.from(canvas);
+        }
+
+        // Create displacement sprite
+        const noiseTexture = createNoiseTexture(512, 512);
+        const displacementSprite = new PIXI.Sprite(noiseTexture);
+        displacementSprite.texture.baseTexture.wrapMode = PIXI.WRAP_MODES.REPEAT;
+        displacementSprite.width = app.screen.width * 2;
+        displacementSprite.height = app.screen.height * 2;
+        app.stage.addChild(displacementSprite);
+        displacementSprite.renderable = false;
+        
+        // Apply filter ONLY to the water layer
+        const displacementFilter = new PIXI.filters.DisplacementFilter(displacementSprite);
+        displacementFilter.scale.x = 5;
+        displacementFilter.scale.y = 3;
+        animatedWater.filters = [displacementFilter];
+
+        console.log('Wave filter applied to water layer only');
+
+        // Animation Loop
+        app.ticker.add(() => {
+            displacementSprite.x += 0.2;
+            displacementSprite.y += 0.1;
+            
+            if (displacementSprite.x > app.screen.width) {
+                displacementSprite.x = 0;
+            }
+            if (displacementSprite.y > app.screen.height) {
+                displacementSprite.y = 0;
+            }
+        });
+
+        console.log('✓ Wave animation active - sky static, water animated');
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            app.renderer.resize(window.innerWidth, window.innerHeight);
+            staticSky.width = app.screen.width;
+            staticSky.height = app.screen.height;
+            animatedWater.width = app.screen.width;
+            animatedWater.height = app.screen.height;
+            displacementSprite.width = app.screen.width * 2;
+            displacementSprite.height = app.screen.height * 2;
+            
+            // Redraw mask with new dimensions
+            waterMask.clear();
+            waterMask.beginFill(0xffffff);
+            waterMask.drawRect(0, app.screen.height * 0.4, app.screen.width, app.screen.height * 0.6);
+            waterMask.endFill();
+        });
+    };
+
     // ========== VISITOR COUNTER API ==========
     const API_URL = 'http://localhost:5000/api'; // Update this to your actual API URL
     
@@ -254,6 +376,7 @@
 
     // 3. Init: Run immediately when the page loads
     window.onload = function() {
+        initLiveBackground(); // Start the waves
         checkCrewStatus();
         trackVisitor();
         updateAllStatuses();
