@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indomitable Status</title>
+    <style>
+        body { font-family: sans-serif; background-color: #0f172a; color: #f1f5f9; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        h1 { border-bottom: 2px solid #38bdf8; padding-bottom: 10px; color: #38bdf8; }
+        .node-card { background: #1e293b; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .node-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .node-name { font-size: 1.5rem; font-weight: bold; }
+        .timestamp { font-size: 0.8rem; color: #94a3b8; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        .stat-item { background: #334155; padding: 10px; border-radius: 4px; text-align: center; }
+        .stat-label { display: block; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; }
+        .stat-value { font-size: 1.1rem; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #334155; }
+        th { color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; }
+        .status-pill { padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; text-transform: capitalize;}
+        .status-running, .status-healthy { background: #064e3b; color: #34d399; }
+        .status-offline { background: #7f1d1d; color: #f87171; }
+        .status-starting { background: #78350f; color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Master-at-Arms Fleet Status</h1>
+        <div id="dashboard-content">Initializing sensors...</div>
+    </div>
+
+    <script>
+        const nodes = ['status_batfe.json', 'status_applepi.json'];
+
+        async function updateDashboard() {
+            const container = document.getElementById('dashboard-content');
+            let html = '';
+
+            for (const node of nodes) {
+                try {
+                    const response = await fetch(node + '?t=' + new Date().getTime());
+                    const data = await response.json();
+                    
+                    html += `
+                        <div class="node-card">
+                            <div class="node-header">
+                                <span class="node-name">${data.node}</span>
+                                <span class="timestamp">Last Report: ${data.timestamp}</span>
+                            </div>
+                            <div class="stats-grid">
+                                <div class="stat-item"><span class="stat-label">Temp</span><span class="stat-value">${data.system.cpu_temp}</span></div>
+                                <div class="stat-item"><span class="stat-label">CPU</span><span class="stat-value">${data.system.cpu_usage}</span></div>
+                                <div class="stat-item"><span class="stat-label">RAM</span><span class="stat-value">${data.system.memory_usage}</span></div>
+                            </div>
+                            <table>
+                                <thead><tr><th>Service</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    ${Object.entries(data.services).map(([name, status]) => `
+                                        <tr>
+                                            <td>${name}</td>
+                                            <td><span class="status-pill status-${status}">${status}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } catch (e) { console.error('Missing: ' + node); }
+            }
+            container.innerHTML = html;
+        }
+
+        setInterval(updateDashboard, 15000); // Auto-refresh every 15 seconds
+        updateDashboard();
+    </script>
+</body>
+</html>

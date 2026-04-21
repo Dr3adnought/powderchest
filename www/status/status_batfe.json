@@ -1,0 +1,14 @@
+{
+    "node": "BATFE",
+    "timestamp": "2026-04-21 12:14:02",
+    "services": {
+        "mc-portal": "running",
+        "velocity-proxy": "healthy"
+    },
+    "system": {
+        "cpu_temp": "31.6C",
+        "cpu_usage": "75.0%",
+        "memory_usage": "19.4%",
+        "net_io": 840893366
+    }
+}

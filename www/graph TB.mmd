@@ -1,0 +1,92 @@
+graph TB
+    Internet[("🌐<br/>Internet<br/>Users")]
+    CF[("☁️<br/>Cloudflare<br/>CDN")]
+    Discord[("🎮<br/>Discord<br/>Platform")]
+    
+    subgraph pi4 ["🏴‍☠️<br/>RPi 4<br/>Edge Server"]
+        direction LR
+        spacer_left["<br/><br/><br/><br/>"]
+        Nginx{"⚓<br/>Nginx<br/>Reverse Proxy<br/>:80/:443"}
+        Dashboard["🗺️<br/>Powderchest<br/>Dashboard"]
+        spacer_left ~~~ Nginx
+    end
+    
+    subgraph pi5 ["⛵<br/>RPi 5<br/>Compute Server"]
+        Docker[["🐋<br/>Docker<br/>Engine"]]
+        MC1["🎮<br/>TheStandard<br/>MC Server"]
+        MC2["🎮<br/>FakeMas0n<br/>MC Server"]
+        PH["🛡️<br/>Pi-Hole<br/>DNS Sinkhole"]
+        Unbound["🔒<br/>Unbound<br/>DNS Resolver"]
+        WG["🔐<br/>WireGuard<br/>VPN Tunnel"]
+        Ollama["🤖<br/>Ollama<br/>AI/LLM"]
+        SkyNet["🤖<br/>SkyNet<br/>Discord Bot"]
+        WebUI["🖥️<br/>Open WebUI<br/>LLM Interface"]
+        BMRender["🗺️<br/>BlueMap<br/>Renderer"]
+    end
+    
+    HDD[("💾<br/>4TB HDD<br/>ext4 + Samba NAS<br/>World/Maps/Images<br/>Docker AppData")]
+    
+    subgraph legend ["📋 Key"]
+        direction TB
+        L1[("External Service")]
+        L2{"Network/Proxy"}
+        L3["Application"]
+        L4[["Orchestrator"]]
+        L5[("Storage/Database")]
+        L6["─── Synchronous"]
+        L7["─ ─ Proxy/Async"]
+        L8["━━━ Data Flow"]
+    end
+    
+    %% SkyNet <-> Discord
+    SkyNet <-->|"Bot Events"|Discord
+    
+    %% Internet flow
+    Internet -->|"HTTPS"|CF
+    CF -->|"Protected"|Nginx
+    
+    %% Nginx routing
+    Nginx -->Dashboard
+    Nginx -.->MC1
+    Nginx -.->MC2
+    Nginx -.->WebUI
+    Nginx -.->|"Serves"|HDD
+    
+    %% Docker orchestration
+    Docker ==>MC1
+    Docker ==>MC2
+    Docker ==>PH
+    Docker ==>Unbound
+    Docker ==>WG
+    Docker ==>Ollama
+    Docker ==>SkyNet
+    Docker ==>WebUI
+    
+    %% Home network services
+    PH <-->Unbound
+    Unbound <-->WG
+    WebUI <-->|"LLM API"|Ollama
+    
+    %% Storage connections
+    Docker ==>|"Mounts<br/>/app-data"|HDD
+    MC1 <-->HDD
+    MC2 <-->HDD
+    BMRender -->|"Map Writes"|HDD
+    HDD -->|"World Reads"|BMRender
+    
+    %% Styling
+    classDef cloudStyle fill:#1a1a2e,stroke:#00d4ff,stroke-width:4px,color:#00d4ff,font-weight:bold
+    classDef proxyStyle fill:#1a1a2e,stroke:#2ecc71,stroke-width:4px,color:#2ecc71,font-weight:bold
+    classDef appStyle fill:#1a1a2e,stroke:#e67e22,stroke-width:3px,color:#e67e22,font-weight:bold
+    classDef containerStyle fill:#1a1a2e,stroke:#9b59b6,stroke-width:2px,color:#c39bd3
+    classDef storageStyle fill:#1a1a2e,stroke:#d4af37,stroke-width:4px,color:#d4af37,font-weight:bold
+    classDef orchestratorStyle fill:#1a1a2e,stroke:#3498db,stroke-width:3px,color:#3498db,font-weight:bold
+    classDef legendStyle fill:#1a1a2e,stroke:#555,stroke-width:1px,color:#999,font-size:40px
+    
+    class Internet,CF,Discord cloudStyle
+    class Nginx proxyStyle
+    class Dashboard,BMRender appStyle
+    class Docker orchestratorStyle
+    class MC1,MC2,PH,Unbound,WG,Ollama,SkyNet,WebUI containerStyle
+    class HDD storageStyle
+    class L1,L2,L3,L4,L5,L6,L7,L8 legendStyle

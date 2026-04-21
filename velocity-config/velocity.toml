@@ -1,0 +1,19 @@
+config-version = "2.7"
+force-key-authentication = false
+
+[general]
+bind = "0.0.0.0:25565"
+player-info-forwarding-mode = "legacy"
+show-max-players = 20
+
+[servers]
+family = "192.168.0.105:25566"
+fakemas0n = "192.168.0.105:25567"
+try = ["family"]
+
+[advanced]
+# forwarding-secret-file = "forwarding.secret"
+forwarding-secret = "jbl75tle76atm94"
+ 
+[forced-hosts]
+# We leave this empty to stop the errors you saw

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Architecture | Powderchest</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js?v=2"></script>
+    <script>
+        const mermaidConfig = {
+            startOnLoad: false,
+            theme: 'dark',
+            themeVariables: {
+                fontSize: '24px',
+                fontFamily: 'Inter, sans-serif',
+                primaryColor: '#1a1a2e',
+                primaryTextColor: '#ffffff',
+                primaryBorderColor: '#d4af37',
+                secondaryColor: '#16213e',
+                tertiaryColor: '#0f3460',
+                clusterBkg: '#071932',
+                clusterBorder: '#d4af37'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                nodeSpacing: 90,
+                rankSpacing: 100,
+                padding: 30,
+                curve: 'basis'
+            }
+        };
+
+        mermaid.initialize(mermaidConfig);
+
+        // Load diagram from canonical source file rather than duplicating it here
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('graph TB.mmd')
+                .then(r => {
+                    if (!r.ok) throw new Error('Failed to load graph TB.mmd: ' + r.status);
+                    return r.text();
+                })
+                .then(async diagramText => {
+                    const container = document.getElementById('mermaid-container');
+                    const { svg } = await mermaid.render('mermaid-diagram', diagramText);
+                    container.innerHTML = svg;
+                })
+                .catch(err => {
+                    document.getElementById('mermaid-container').innerHTML =
+                        `<p style="color:#e74c3c;padding:1rem;">⚠️ Could not load diagram: ${err.message}</p>`;
+                });
+        });
+    </script>
+    <style>
+    /* KEEP THESE: Global Page Layout */
+    .system-page {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+    nav { margin-bottom: 2rem; }
+    nav a {
+        color: #d4af37;
+        text-decoration: none;
+        font-size: 1.1rem;
+        transition: opacity 0.3s;
+    }
+    nav a:hover { opacity: 0.7; }
+    h1 {
+        font-family: 'PirateFont', Georgia, serif;
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        color: #d4af37;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    /* REPLACE THESE: The New Optimized Mermaid Styles */
+    .mermaid {
+        background: rgba(10, 10, 10, 0.9);
+        padding: 24px;
+        border-radius: 20px;
+        border: 3px solid #d4af37;
+        overflow-x: auto;
+        width: 100%;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+
+    .mermaid svg {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 760px;
+    }
+
+    /* Readable text */
+    .mermaid .node text {
+        font-size: 26px !important;
+        font-weight: 600 !important;
+    }
+
+    /* Mermaid uses htmlLabels in foreignObject blocks; style those explicitly */
+    .mermaid .nodeLabel,
+    .mermaid .label foreignObject div,
+    .mermaid .label foreignObject span {
+        font-size: 24px !important;
+        line-height: 1.2 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Legend items - smaller text */
+    .mermaid g[id*="flowchart-legend"] .node text,
+    .mermaid g[id*="L"] .node text {
+        font-size: 20px !important;
+    }
+    
+    .mermaid .edgeLabel {
+        background-color: rgba(0, 0, 0, 0.95) !important;
+        padding: 8px 12px !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+    }
+
+    .mermaid .edgeLabel foreignObject div,
+    .mermaid .edgeLabel foreignObject span {
+        font-size: 18px !important;
+        line-height: 1.15 !important;
+        font-weight: 600 !important;
+    }
+
+    /* Subgraph titles */
+    .cluster-label span {
+        font-family: 'PirateFont', Georgia, serif !important;
+        font-size: 34px !important;
+        color: #d4af37 !important;
+        font-weight: bold !important;
+        padding: 10px !important;
+    }
+    
+    /* Subgraph backgrounds - transparent/translucent */
+    .mermaid .cluster rect {
+        fill: rgba(3, 10, 33, 0.3) !important;
+    }
+    
+    /* Hide spacer nodes visually but keep their space */
+    .mermaid g[id*="spacer"] rect,
+    .mermaid g[id*="spacer_"] rect {
+        fill: transparent !important;
+        stroke: transparent !important;
+    }
+    .mermaid g[id*="spacer"] text,
+    .mermaid g[id*="spacer_"] text {
+        fill: transparent !important;
+        opacity: 0 !important;
+    }
+    
+    @media (min-width: 1024px) {
+        .mermaid {
+            max-width: 1800px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .mermaid {
+            padding: 14px;
+        }
+
+        .mermaid svg {
+            width: 100% !important;
+            min-height: 680px;
+        }
+
+        .mermaid .node text {
+            font-size: 16px !important;
+        }
+
+        .mermaid .nodeLabel,
+        .mermaid .label foreignObject div,
+        .mermaid .label foreignObject span {
+            font-size: 16px !important;
+            line-height: 1.2 !important;
+        }
+
+        .mermaid g[id*="flowchart-legend"] .node text,
+        .mermaid g[id*="L"] .node text {
+            font-size: 14px !important;
+        }
+
+        .mermaid .edgeLabel {
+            font-size: 13px !important;
+            padding: 4px 8px !important;
+        }
+
+        .mermaid .edgeLabel foreignObject div,
+        .mermaid .edgeLabel foreignObject span {
+            font-size: 13px !important;
+        }
+
+        .cluster-label span {
+            font-size: 22px !important;
+            padding: 4px 8px !important;
+        }
+    }
+
+    </style>
+</head>
+<body class="system-page">
+    <nav>
+        <a href="index.html">← Return to Dashboard</a>
+    </nav>
+    
+    <h1>The Maritime Architecture</h1>
+    
+    <!-- Diagram loaded dynamically from graph TB.mmd — edit that file, not here -->
+    <div id="mermaid-container" class="mermaid"></div>
+</body>
+</html>

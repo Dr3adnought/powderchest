@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowderChest | Home Lab & Servers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.2/pixi.min.js"></script>
+    <link rel="stylesheet" href="style.css?v=3">
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div class="hero">
+        <h1 class="brand-title">powder chest</h1>
+        <p class="brand-subtitle">Maritime Defense & Intelligence Stack</p>
+    </div>
+
+    <div class="controls">
+        <button onclick="updateAllStatuses()" class="refresh-btn">
+            <span id="refresh-icon">↻</span> Refresh Status
+        </button>
+    </div>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="server-card">
+                <h2>The Standard</h2>
+                <div class="status-box">
+                    Status: <span id="standard-status">Checking...</span>
+                </div>
+                <a href="http://thestandard.powderchest.com" class="btn btn-standard">Treasure Map</a>
+            </div>
+
+            <div class="server-card">
+                <h2>FakeMas0n</h2>
+                <div class="status-box">
+                    Status: <span id="teen-status">Checking...</span>
+                </div>
+                <a href="http://fakemas0n.powderchest.com" class="btn btn-mason">Treasure Map</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <a href="system.html" class="system-link">
+            View System Architecture
+        </a>
+    </div>
+
+    <div class="ships-log">
+        <h3>⚓ Ship's Log</h3>
+        <div class="log-stats">
+            <div class="stat-item">
+                <span class="stat-icon">👥</span>
+                <span class="stat-label">All Souls Aboard:</span>
+                <span id="total-visitors" class="stat-value">--</span>
+            </div>
+            <div class="stat-item crew-stat" id="crew-stat-item">
+                <span class="stat-icon">🎮</span>
+                <span class="stat-label">Crew Members:</span>
+                <span id="crew-count" class="stat-value" role="button" tabindex="0" aria-haspopup="true" aria-expanded="false" aria-controls="crew-popover">--</span>
+                <div id="crew-popover" class="crew-popover" aria-hidden="true">
+                    <div class="crew-popover-title">Crew Aboard</div>
+                    <div id="crew-popover-content" class="crew-popover-content">No crew members checked in yet.</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-icon">🗺️</span>
+                <span class="stat-label">Wandering Souls:</span>
+                <span id="wanderer-count" class="stat-value">--</span>
+            </div>
+        </div>
+        <button id="crew-btn" class="crew-btn" onclick="joinCrew()">
+            ⚔️ I'm Part of the Crew
+        </button>
+    </div>
+
+    <script>
+        // ========== PIXIJS LIVE BACKGROUND ==========
+    const initLiveBackground = () => {
+        // Create PixiJS app (v7 syntax)
+        const app = new PIXI.Application({
+            width: window.innerWidth,
+            height: window.innerHeight,
+            resolution: window.devicePixelRatio || 1,
+            autoDensity: true,
+            backgroundColor: 0x000000,
+        });
+        
+        const container = document.body.querySelector('#canvas-container');
+        container.appendChild(app.view);
+        
+        // CRITICAL: Force the canvas to not create layout space
+        app.view.style.position = 'fixed';
+        app.view.style.top = '0';
+        app.view.style.left = '0';
+        app.view.style.width = '100%';
+        app.view.style.height = '100%';
+        app.view.style.zIndex = '-1';
+        app.view.style.pointerEvents = 'none';
+
+        console.log('PixiJS v7 initialized');
+
+        // Load ocean background texture
+        const backgroundTexture = PIXI.Texture.from('night_ocean.png');
+        
+        // Create TWO sprites from the same image
+        // One for the static sky, one for the animated water
+        const staticSky = new PIXI.Sprite(backgroundTexture);
+        staticSky.width = app.screen.width;
+        staticSky.height = app.screen.height;
+        app.stage.addChild(staticSky);
+        
+        const animatedWater = new PIXI.Sprite(backgroundTexture);
+        animatedWater.width = app.screen.width;
+        animatedWater.height = app.screen.height;
+        app.stage.addChild(animatedWater);
+        
+        // Create a mask that only shows the bottom 60% (water portion)
+        const waterMask = new PIXI.Graphics();
+        waterMask.beginFill(0xffffff);
+        waterMask.drawRect(0, app.screen.height * 0.5, app.screen.width, app.screen.height * 0.6);
+        waterMask.endFill();
+        app.stage.addChild(waterMask);
+        animatedWater.mask = waterMask;
+
+        console.log('Sky & water layers created');
+
+        // Generate noise texture procedurally
+        function createNoiseTexture(width, height) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.createImageData(width, height);
+            
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                const value = Math.random() * 255;
+                imageData.data[i] = value;
+                imageData.data[i + 1] = value;
+                imageData.data[i + 2] = value;
+                imageData.data[i + 3] = 255;
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            return PIXI.Texture.from(canvas);
+        }
+
+        // Create displacement sprite
+        const noiseTexture = createNoiseTexture(512, 512);
+        const displacementSprite = new PIXI.Sprite(noiseTexture);
+        displacementSprite.texture.baseTexture.wrapMode = PIXI.WRAP_MODES.REPEAT;
+        displacementSprite.width = app.screen.width * 2;
+        displacementSprite.height = app.screen.height * 2;
+        app.stage.addChild(displacementSprite);
+        displacementSprite.renderable = false;
+        
+        // Apply filter ONLY to the water layer
+        const displacementFilter = new PIXI.filters.DisplacementFilter(displacementSprite);
+        displacementFilter.scale.x = 5;
+        displacementFilter.scale.y = 3;
+        animatedWater.filters = [displacementFilter];
+
+        console.log('Wave filter applied to water layer only');
+
+        // Animation Loop
+        app.ticker.add(() => {
+            displacementSprite.x += 0.2;
+            displacementSprite.y += 0.1;
+            
+            if (displacementSprite.x > app.screen.width) {
+                displacementSprite.x = 0;
+            }
+            if (displacementSprite.y > app.screen.height) {
+                displacementSprite.y = 0;
+            }
+        });
+
+        console.log('✓ Wave animation active - sky static, water animated');
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            app.renderer.resize(window.innerWidth, window.innerHeight);
+            staticSky.width = app.screen.width;
+            staticSky.height = app.screen.height;
+            animatedWater.width = app.screen.width;
+            animatedWater.height = app.screen.height;
+            displacementSprite.width = app.screen.width * 2;
+            displacementSprite.height = app.screen.height * 2;
+            
+            // Redraw mask with new dimensions
+            waterMask.clear();
+            waterMask.beginFill(0xffffff);
+            waterMask.drawRect(0, app.screen.height * 0.4, app.screen.width, app.screen.height * 0.6);
+            waterMask.endFill();
+        });
+    };
+
+    // ========== VISITOR COUNTER API ==========
+    function resolveApiUrl() {
+        const hostname = window.location.hostname;
+        const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+        return isLocal ? 'http://localhost:5000/api' : `${window.location.origin}/api`;
+    }
+
+    const API_URL = resolveApiUrl();
+    
+    // Generate a simple browser fingerprint for unique visitor tracking
+    function getBrowserFingerprint() {
+        const nav = navigator;
+        const screen = window.screen;
+        const fingerprint = [
+            nav.userAgent,
+            nav.language,
+            screen.colorDepth,
+            screen.width + 'x' + screen.height,
+            new Date().getTimezoneOffset()
+        ].join('|');
+        
+        // Simple hash function
+        let hash = 0;
+        for (let i = 0; i < fingerprint.length; i++) {
+            const char = fingerprint.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return Math.abs(hash).toString(36);
+    }
+
+    // Track visitor and update counts
+    async function trackVisitor() {
+        const visitorId = getBrowserFingerprint();
+        const isCrew = localStorage.getItem('isCrew') === 'true';
+        const crewName = localStorage.getItem('crewName') || '';
+        
+        try {
+            const response = await fetch(`${API_URL}/visit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ visitorId, isCrew, crewName })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                updateCounters(data);
+            }
+        } catch (error) {
+            console.log('Visitor tracking unavailable:', error);
+            // Show placeholder if API is down
+            document.getElementById('total-visitors').textContent = '⚓';
+            document.getElementById('crew-count').textContent = '⚓';
+            document.getElementById('wanderer-count').textContent = '⚓';
+            document.getElementById('crew-count').title = 'Visitor API offline';
+        }
+    }
+
+    // Join the crew
+    async function joinCrew() {
+        const visitorId = getBrowserFingerprint();
+        const existingName = localStorage.getItem('crewName') || '';
+        let crewName = existingName;
+
+        if (!crewName) {
+            const provided = prompt('What should we call you in the crew roster?');
+            if (provided === null) {
+                return;
+            }
+            crewName = provided.trim();
+            if (!crewName) {
+                alert('A crew name is required to join the roster.');
+                return;
+            }
+            crewName = crewName.slice(0, 32);
+            localStorage.setItem('crewName', crewName);
+        }
+
+        localStorage.setItem('isCrew', 'true');
+        
+        try {
+            const response = await fetch(`${API_URL}/join-crew`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ visitorId, crewName })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                updateCounters(data);
+                
+                // Update button
+                const btn = document.getElementById('crew-btn');
+                btn.textContent = '⚓ Welcome Aboard, Matey!';
+                btn.disabled = true;
+                btn.style.opacity = '0.6';
+                btn.style.cursor = 'not-allowed';
+            }
+        } catch (error) {
+            console.log('Could not join crew:', error);
+        }
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function setCrewPopover(crewMembers, crewCount) {
+        const contentEl = document.getElementById('crew-popover-content');
+        const crewCountEl = document.getElementById('crew-count');
+        if (!contentEl || !crewCountEl) return;
+
+        if (crewMembers.length > 0) {
+            const listItems = crewMembers
+                .map((name) => `<li>${escapeHtml(name)}</li>`)
+                .join('');
+            contentEl.innerHTML = `<ul>${listItems}</ul>`;
+            crewCountEl.title = `Crew aboard: ${crewMembers.join(', ')}`;
+        } else if (Number(crewCount) > 0) {
+            contentEl.textContent = 'Crew members are aboard, but names are not set yet.';
+            crewCountEl.title = 'Crew members are aboard, but names are not set yet.';
+        } else {
+            contentEl.textContent = 'No crew members checked in yet.';
+            crewCountEl.title = 'No crew members checked in yet.';
+        }
+    }
+
+    function showCrewPopover() {
+        const popover = document.getElementById('crew-popover');
+        const crewCountEl = document.getElementById('crew-count');
+        if (!popover || !crewCountEl) return;
+
+        popover.classList.add('visible');
+        popover.setAttribute('aria-hidden', 'false');
+        crewCountEl.setAttribute('aria-expanded', 'true');
+    }
+
+    function hideCrewPopover() {
+        const popover = document.getElementById('crew-popover');
+        const crewCountEl = document.getElementById('crew-count');
+        if (!popover || !crewCountEl) return;
+
+        popover.classList.remove('visible');
+        popover.setAttribute('aria-hidden', 'true');
+        crewCountEl.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleCrewPopover() {
+        const popover = document.getElementById('crew-popover');
+        if (!popover) return;
+
+        if (popover.classList.contains('visible')) {
+            hideCrewPopover();
+        } else {
+            showCrewPopover();
+        }
+    }
+
+    function initCrewPopoverInteractions() {
+        const crewCountEl = document.getElementById('crew-count');
+        const crewStatItem = document.getElementById('crew-stat-item');
+        if (!crewCountEl || !crewStatItem) return;
+
+        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+        let longPressTimer = null;
+        let suppressNextTouchClick = false;
+
+        crewCountEl.addEventListener('mouseenter', showCrewPopover);
+        crewStatItem.addEventListener('mouseleave', hideCrewPopover);
+        crewCountEl.addEventListener('focus', showCrewPopover);
+
+        if (isTouchDevice) {
+            crewCountEl.addEventListener('touchstart', (event) => {
+                if (event.touches.length !== 1) return;
+                clearTimeout(longPressTimer);
+                suppressNextTouchClick = false;
+                longPressTimer = setTimeout(() => {
+                    showCrewPopover();
+                    suppressNextTouchClick = true;
+                }, 500);
+            }, { passive: true });
+
+            const clearTouchTimer = () => {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+            };
+
+            crewCountEl.addEventListener('touchend', clearTouchTimer, { passive: true });
+            crewCountEl.addEventListener('touchcancel', clearTouchTimer, { passive: true });
+        }
+
+        crewCountEl.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (isTouchDevice) {
+                if (suppressNextTouchClick) {
+                    suppressNextTouchClick = false;
+                }
+                return;
+            }
+
+            toggleCrewPopover();
+        });
+        crewCountEl.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleCrewPopover();
+            } else if (event.key === 'Escape') {
+                hideCrewPopover();
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!crewStatItem.contains(event.target)) {
+                hideCrewPopover();
+            }
+        });
+    }
+
+    // Update the counter displays
+    function updateCounters(data) {
+        document.getElementById('total-visitors').textContent = data.total;
+        document.getElementById('crew-count').textContent = data.crew;
+        document.getElementById('wanderer-count').textContent = data.wanderers;
+
+        const crewCountEl = document.getElementById('crew-count');
+        const crewMembers = Array.isArray(data.crewMembers) ? data.crewMembers : [];
+        setCrewPopover(crewMembers, data.crew);
+
+        if (crewMembers.length > 0) {
+            crewCountEl.classList.add('has-crew-names');
+        } else {
+            crewCountEl.classList.remove('has-crew-names');
+        }
+    }
+
+    // Check if already crew member on page load
+    function checkCrewStatus() {
+        if (localStorage.getItem('isCrew') === 'true') {
+            const btn = document.getElementById('crew-btn');
+            btn.textContent = '⚓ Welcome Aboard, Matey!';
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+        }
+    }
+
+    // ========== SERVER STATUS LOGIC ==========
+    // 1. The Core Logic: Fetches data for a specific server
+    async function checkStatus(elementId, domain) {
+        try {
+            const response = await fetch(`https://api.mcstatus.io/v2/status/java/${domain}`);
+            const data = await response.json();
+            const el = document.getElementById(elementId);
+            
+            // Find the container that holds the button/status (likely your .card)
+            const cardBody = el.parentElement;
+
+            // Find the card container and clean up any old player lists
+            const card = el.closest('.server-card');
+            const oldPlayerList = card.querySelector('.player-toggle-container');
+            if (oldPlayerList) oldPlayerList.remove();
+
+            if (data.online) {
+                el.innerHTML = `
+                    <span class="status-dot dot-online"></span>
+                    <span class="text-online">Online</span> 
+                    <small>(${data.players.online}/${data.players.max})</small>`;
+                
+                // Only create toggle if players are actually online
+                if (data.players.list && data.players.list.length > 0) {
+                    const names = data.players.list.map(p => p.name_clean).join(', ');
+                    const listId = `list-${elementId}`;
+                    
+                    const playerHtml = `
+                        <div class="player-toggle-container">
+                            <a href="javascript:void(0)" class="toggle-players" onclick="toggleDisplay('${listId}')">
+                                + Show Players
+                            </a>
+                            <div id="${listId}" class="player-list">
+                                📋 ${names}
+                            </div>
+                        </div>`;
+                    
+                    // Append after the Live Map button
+                    card.insertAdjacentHTML('beforeend', playerHtml);
+                }
+
+            } else {
+                el.innerHTML = `
+                    <span class="status-dot dot-offline"></span>
+                    <span class="text-offline">Offline</span>`;
+            }
+        } catch (error) {
+            console.error("Status check failed:", error);
+        }
+    }
+
+    // Simple function to flip the visibility
+    function toggleDisplay(id) {
+        const list = document.getElementById(id);
+        const link = list.previousElementSibling;
+        if (list.style.display === "block") {
+            list.style.display = "none";
+            link.innerText = "+ Show Players";
+        } else {
+            list.style.display = "block";
+            link.innerText = "- Hide Players";
+        }
+    }
+
+    // 2. The Orchestrator: Handles the button animation and triggers both checks
+    async function updateAllStatuses() {
+        const btn = document.getElementById('refresh-icon');
+        
+        // Add spinning class if the button exists
+        if (btn) btn.classList.add('spinning');
+        
+        // "await Promise.all" runs both checks at the same time and waits for both to finish
+        await Promise.all([
+            checkStatus('standard-status', 'thestandard.powderchest.com'),
+            checkStatus('teen-status', 'fakemas0n.powderchest.com')
+        ]);
+        
+        // Remove the spin after a slight delay so the user sees the feedback
+        if (btn) {
+            setTimeout(() => {
+                btn.classList.remove('spinning');
+            }, 600);
+        }
+    }
+
+    // 3. Init: Run immediately when the page loads
+    window.onload = function() {
+        initLiveBackground(); // Start the waves
+        initCrewPopoverInteractions();
+        checkCrewStatus();
+        trackVisitor();
+        updateAllStatuses();
+    };
+</script>
+</body>
+</html>
