@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Runtime data
+data/
+visitor-api/data/
+
+# Local-only infrastructure notes / secrets
+pi-dcy.txt
+.env
+.env.*
+!.env.example

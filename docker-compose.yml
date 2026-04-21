@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  visitor-api:
+    build: ./visitor-api
+    container_name: powderchest-visitor-api
+    restart: unless-stopped
+    ports:
+      # Exposed for reverse-proxy access (for example Pi4 nginx -> Pi5 visitor-api).
+      - "5000:5000"
+    volumes:
+      - ./data:/data
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - powderchest-network
+    healthcheck:
+      # Use Python stdlib so we do not depend on curl being present in the image.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=3)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  powderchest-network:
+    driver: bridge
+
+volumes:
+  visitor-data:
+    driver: local
