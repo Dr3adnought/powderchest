@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 
 # --- CONFIGURATION ---
-NODE_NAME = "BATFE"
+NODE_NAME = "Sloop (RPi 4B)"
 # Path to the status folder we created in your Nginx www directory
 OUTPUT_PATH = "/home/BATFE/indomitable-rapscallion/www/status/status_batfe.json"
 NTFY_URL = "https://ntfy.sh/powderchest_alerts" # Change to your preferred topic
