@@ -15,6 +15,11 @@ PIHOLE_SUMMARY_URL = os.getenv("PIHOLE_SUMMARY_URL", "").strip()
 PIHOLE_BASE_URL = os.getenv("PIHOLE_BASE_URL", "").strip().rstrip("/")
 PIHOLE_PASSWORD = os.getenv("PIHOLE_PASSWORD", "")
 PIHOLE_TOTP = os.getenv("PIHOLE_TOTP", "")
+PIHOLE_SESSION_CACHE_PATH = os.getenv(
+    "PIHOLE_SESSION_CACHE_PATH",
+    "/home/BATFE/indomitable-rapscallion/.pihole_session_cache.json",
+)
+PIHOLE_AUTH_BACKOFF_SECONDS_RAW = os.getenv("PIHOLE_AUTH_BACKOFF_SECONDS", "300")
 
 def safe_float(value, default=0.0):
     try:
@@ -28,6 +33,73 @@ def safe_int(value, default=0):
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+PIHOLE_AUTH_BACKOFF_SECONDS = safe_int(PIHOLE_AUTH_BACKOFF_SECONDS_RAW, 300)
+
+
+def _load_pihole_session_cache():
+    try:
+        with open(PIHOLE_SESSION_CACHE_PATH, "r") as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
+
+
+def _save_pihole_session_cache(data):
+    try:
+        with open(PIHOLE_SESSION_CACHE_PATH, "w") as f:
+            json.dump(data, f)
+    except OSError:
+        # Non-fatal: the collector can still run without persistent cache.
+        pass
+
+
+def _session_headers_from_cache(cache):
+    sid = cache.get("sid")
+    expires_at = safe_int(cache.get("expires_at"), 0)
+    now = int(datetime.now(UTC).timestamp())
+    if not sid or now >= expires_at:
+        return None
+    return {"X-FTL-SID": sid}
+
+
+def _authenticate_pihole(session, cache):
+    now = int(datetime.now(UTC).timestamp())
+    next_auth_after = safe_int(cache.get("next_auth_after"), 0)
+    if now < next_auth_after:
+        return None, f"auth-backoff:{next_auth_after - now}s"
+
+    auth_payload = {"password": PIHOLE_PASSWORD}
+    if PIHOLE_TOTP:
+        auth_payload["totp"] = safe_int(PIHOLE_TOTP)
+
+    auth_response = session.post(
+        f"{PIHOLE_BASE_URL}/api/auth",
+        json=auth_payload,
+        timeout=3,
+    )
+
+    if auth_response.status_code == 429:
+        cache["next_auth_after"] = now + max(60, PIHOLE_AUTH_BACKOFF_SECONDS)
+        _save_pihole_session_cache(cache)
+        return None, "rate-limited"
+
+    auth_response.raise_for_status()
+
+    auth_json = auth_response.json() if auth_response.content else {}
+    session_obj = auth_json.get("session", {}) if isinstance(auth_json, dict) else {}
+    sid = session_obj.get("sid")
+    if not sid:
+        return None, "missing-sid"
+
+    validity = safe_int(session_obj.get("validity"), 300)
+    cache["sid"] = sid
+    cache["expires_at"] = now + max(30, validity - 10)
+    cache["next_auth_after"] = 0
+    _save_pihole_session_cache(cache)
+    return {"X-FTL-SID": sid}, None
 
 
 def get_docker_stats():
@@ -80,30 +152,44 @@ def get_pihole_stats():
     try:
         session = requests.Session()
         request_headers = {}
+        cache = _load_pihole_session_cache()
 
         if PIHOLE_PASSWORD and PIHOLE_BASE_URL:
-            auth_payload = {"password": PIHOLE_PASSWORD}
-            if PIHOLE_TOTP:
-                auth_payload["totp"] = safe_int(PIHOLE_TOTP)
-
-            auth_response = session.post(
-                f"{PIHOLE_BASE_URL}/api/auth",
-                json=auth_payload,
-                timeout=3,
-            )
-            auth_response.raise_for_status()
-
-            auth_json = auth_response.json() if auth_response.content else {}
-            sid = (
-                auth_json.get("session", {}).get("sid")
-                if isinstance(auth_json, dict)
-                else None
-            )
-            if sid:
-                request_headers["X-FTL-SID"] = sid
-            source = "http-auth"
+            cached_headers = _session_headers_from_cache(cache)
+            if cached_headers:
+                request_headers = cached_headers
+                source = "http-auth-cached"
+            else:
+                new_headers, auth_error = _authenticate_pihole(session, cache)
+                if not new_headers:
+                    return {
+                        "status": "unavailable",
+                        "error": f"Pi-hole auth unavailable ({auth_error})",
+                        "source": source,
+                    }
+                request_headers = new_headers
+                source = "http-auth"
 
         response = session.get(summary_url, timeout=3, headers=request_headers)
+
+        # If a cached SID expired unexpectedly, retry once with a fresh auth.
+        if response.status_code == 401 and PIHOLE_PASSWORD and PIHOLE_BASE_URL:
+            cache = _load_pihole_session_cache()
+            cache.pop("sid", None)
+            cache["expires_at"] = 0
+            _save_pihole_session_cache(cache)
+
+            new_headers, auth_error = _authenticate_pihole(session, cache)
+            if not new_headers:
+                return {
+                    "status": "unavailable",
+                    "error": f"Pi-hole re-auth failed ({auth_error})",
+                    "source": source,
+                }
+            request_headers = new_headers
+            source = "http-auth-refresh"
+            response = session.get(summary_url, timeout=3, headers=request_headers)
+
         response.raise_for_status()
         payload = response.json()
 
