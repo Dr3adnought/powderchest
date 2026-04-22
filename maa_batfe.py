@@ -35,6 +35,23 @@ def safe_int(value, default=0):
         return default
 
 
+def get_nested(data, path, default=None):
+    current = data
+    for key in path:
+        if not isinstance(current, dict) or key not in current:
+            return default
+        current = current[key]
+    return current
+
+
+def first_present(data, paths, default=None):
+    for path in paths:
+        value = get_nested(data, path)
+        if value is not None:
+            return value
+    return default
+
+
 PIHOLE_AUTH_BACKOFF_SECONDS = safe_int(PIHOLE_AUTH_BACKOFF_SECONDS_RAW, 300)
 
 
@@ -196,13 +213,65 @@ def get_pihole_stats():
         if isinstance(payload, dict) and isinstance(payload.get("stats"), dict):
             payload = payload["stats"]
 
+        if not isinstance(payload, dict):
+            return {
+                "status": "unavailable",
+                "error": "Unexpected Pi-hole payload type",
+                "source": source,
+            }
+
+        # Pi-hole v5/v6 schema compatibility.
+        status_value = first_present(payload, [
+            ("status",),
+            ("dns", "status"),
+        ], default=None)
+
+        if status_value is None:
+            blocking = first_present(payload, [
+                ("blocking",),
+                ("dns", "blocking"),
+            ], default=None)
+            if isinstance(blocking, bool):
+                status_value = "enabled" if blocking else "disabled"
+
+        dns_queries_today = safe_int(first_present(payload, [
+            ("dns_queries_today",),
+            ("queries_today",),
+            ("queries", "total"),
+            ("dns", "queries", "total"),
+        ], default=0))
+
+        ads_blocked_today = safe_int(first_present(payload, [
+            ("ads_blocked_today",),
+            ("queries", "blocked"),
+            ("dns", "queries", "blocked"),
+        ], default=0))
+
+        ads_percentage_today = round(safe_float(first_present(payload, [
+            ("ads_percentage_today",),
+            ("queries", "percent_blocked"),
+            ("dns", "queries", "percent_blocked"),
+        ], default=0.0)), 2)
+
+        domains_being_blocked = safe_int(first_present(payload, [
+            ("domains_being_blocked",),
+            ("gravity", "domains_being_blocked"),
+            ("gravity", "domains"),
+        ], default=0))
+
+        unique_clients = safe_int(first_present(payload, [
+            ("unique_clients",),
+            ("clients", "active"),
+            ("dns", "clients", "active"),
+        ], default=0))
+
         return {
-            "status": payload.get("status", "unknown"),
-            "dns_queries_today": safe_int(payload.get("dns_queries_today")),
-            "ads_blocked_today": safe_int(payload.get("ads_blocked_today")),
-            "ads_percentage_today": round(safe_float(payload.get("ads_percentage_today")), 2),
-            "domains_being_blocked": safe_int(payload.get("domains_being_blocked")),
-            "unique_clients": safe_int(payload.get("unique_clients")),
+            "status": status_value or "unknown",
+            "dns_queries_today": dns_queries_today,
+            "ads_blocked_today": ads_blocked_today,
+            "ads_percentage_today": ads_percentage_today,
+            "domains_being_blocked": domains_being_blocked,
+            "unique_clients": unique_clients,
             "source": source,
         }
     except requests.RequestException as exc:
