@@ -52,6 +52,24 @@ def first_present(data, paths, default=None):
     return default
 
 
+def normalize_pihole_status(raw_status, domains_being_blocked, dns_queries_today):
+    if isinstance(raw_status, bool):
+        return "armed" if raw_status else "disarmed"
+
+    if raw_status is not None:
+        normalized = str(raw_status).strip().lower()
+        if normalized in {"enabled", "active", "running", "on", "true", "armed"}:
+            return "armed"
+        if normalized in {"disabled", "off", "false", "disarmed"}:
+            return "disarmed"
+
+    # If status is omitted, infer from available stats.
+    if safe_int(domains_being_blocked, 0) > 0 or safe_int(dns_queries_today, 0) > 0:
+        return "armed"
+
+    return "disarmed"
+
+
 PIHOLE_AUTH_BACKOFF_SECONDS = safe_int(PIHOLE_AUTH_BACKOFF_SECONDS_RAW, 300)
 
 
@@ -265,8 +283,14 @@ def get_pihole_stats():
             ("dns", "clients", "active"),
         ], default=0))
 
+        display_status = normalize_pihole_status(
+            status_value,
+            domains_being_blocked,
+            dns_queries_today,
+        )
+
         return {
-            "status": status_value or "unknown",
+            "status": display_status,
             "dns_queries_today": dns_queries_today,
             "ads_blocked_today": ads_blocked_today,
             "ads_percentage_today": ads_percentage_today,
