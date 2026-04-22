@@ -79,6 +79,7 @@ def get_pihole_stats():
 
     try:
         session = requests.Session()
+        request_headers = {}
 
         if PIHOLE_PASSWORD and PIHOLE_BASE_URL:
             auth_payload = {"password": PIHOLE_PASSWORD}
@@ -91,9 +92,18 @@ def get_pihole_stats():
                 timeout=3,
             )
             auth_response.raise_for_status()
+
+            auth_json = auth_response.json() if auth_response.content else {}
+            sid = (
+                auth_json.get("session", {}).get("sid")
+                if isinstance(auth_json, dict)
+                else None
+            )
+            if sid:
+                request_headers["X-FTL-SID"] = sid
             source = "http-auth"
 
-        response = session.get(summary_url, timeout=3)
+        response = session.get(summary_url, timeout=3, headers=request_headers)
         response.raise_for_status()
         payload = response.json()
 
