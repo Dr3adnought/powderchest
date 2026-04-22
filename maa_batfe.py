@@ -54,20 +54,20 @@ def first_present(data, paths, default=None):
 
 def normalize_pihole_status(raw_status, domains_being_blocked, dns_queries_today):
     if isinstance(raw_status, bool):
-        return "armed" if raw_status else "disarmed"
+        return "Armed" if raw_status else "Disarmed"
 
     if raw_status is not None:
         normalized = str(raw_status).strip().lower()
         if normalized in {"enabled", "active", "running", "on", "true", "armed"}:
-            return "armed"
+            return "Armed"
         if normalized in {"disabled", "off", "false", "disarmed"}:
-            return "disarmed"
+            return "Disarmed"
 
     # If status is omitted, infer from available stats.
     if safe_int(domains_being_blocked, 0) > 0 or safe_int(dns_queries_today, 0) > 0:
-        return "armed"
+        return "Armed"
 
-    return "disarmed"
+    return "Disarmed"
 
 
 PIHOLE_AUTH_BACKOFF_SECONDS = safe_int(PIHOLE_AUTH_BACKOFF_SECONDS_RAW, 300)
