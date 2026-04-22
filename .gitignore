@@ -1,3 +1,5 @@
 venv/
 *.log
 www/status/*.json
+data/
+pi-dcy.txt

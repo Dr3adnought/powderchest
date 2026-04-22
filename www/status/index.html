@@ -14,10 +14,26 @@
         .node-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .node-name { font-size: 1.5rem; font-weight: bold; }
         .timestamp { font-size: 0.8rem; color: #94a3b8; }
+        .node-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+        .age-badge { padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+        .age-fresh { background: #064e3b; color: #34d399; }
+        .age-stale { background: #78350f; color: #fbbf24; }
+        .age-critical { background: #7f1d1d; color: #f87171; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px; }
         .stat-item { background: #334155; padding: 10px; border-radius: 4px; text-align: center; }
         .stat-label { display: block; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; }
         .stat-value { font-size: 1.1rem; font-weight: bold; }
+        .section-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 15px; }
+        .section-title { color: #38bdf8; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin: 0 0 12px 0; }
+        .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+        .detail-item { background: #1e293b; border-radius: 6px; padding: 10px; }
+        .detail-label { display: block; font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
+        .detail-value { font-size: 0.98rem; font-weight: 600; color: #f8fafc; word-break: break-word; }
+        .peer-list { display: grid; gap: 10px; }
+        .peer-item { background: #1e293b; border-radius: 6px; padding: 10px; border-left: 3px solid #334155; }
+        .peer-item.peer-online { border-left-color: #34d399; }
+        .peer-item.peer-offline { border-left-color: #f87171; }
+        .peer-title { font-size: 0.92rem; font-weight: 700; margin-bottom: 8px; }
         table { width: 100%; border-collapse: collapse; }
         th, td { text-align: left; padding: 8px; border-bottom: 1px solid #334155; }
         th { color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; }
@@ -25,6 +41,14 @@
         .status-running, .status-healthy { background: #064e3b; color: #34d399; }
         .status-offline { background: #7f1d1d; color: #f87171; }
         .status-starting { background: #78350f; color: #fbbf24; }
+        .status-unknown { background: #1f2937; color: #cbd5e1; }
+        .error-card { border: 1px solid #7f1d1d; }
+        .error-message { color: #fca5a5; margin: 0; }
+
+        @media (max-width: 720px) {
+            .node-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+            .node-meta { justify-content: flex-start; }
+        }
     </style>
 </head>
 <body>
@@ -35,43 +59,329 @@
 
     <script>
         const nodes = ['status_batfe.json', 'status_applepi.json'];
+        const STATUS_CLASS_MAP = {
+            healthy: 'status-healthy',
+            running: 'status-running',
+            starting: 'status-starting',
+            offline: 'status-offline',
+            down: 'status-offline'
+        };
+
+        function normalizeStatus(value) {
+            const normalized = String(value || '').trim().toLowerCase();
+            return STATUS_CLASS_MAP[normalized] ? normalized : 'unknown';
+        }
+
+        function parseNodeTimestamp(rawTimestamp) {
+            if (!rawTimestamp) {
+                return null;
+            }
+
+            const direct = new Date(rawTimestamp);
+            if (!Number.isNaN(direct.getTime())) {
+                return direct;
+            }
+
+            // Support timestamps like "YYYY-MM-DD HH:MM:SS".
+            const match = String(rawTimestamp).match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/);
+            if (!match) {
+                return null;
+            }
+
+            const [, year, month, day, hour, minute, second] = match;
+            return new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second));
+        }
+
+        function getAgeBadge(timestamp) {
+            if (!timestamp) {
+                return { label: 'Unknown age', className: 'age-stale' };
+            }
+
+            const ageSeconds = Math.max(0, Math.floor((Date.now() - timestamp.getTime()) / 1000));
+            if (ageSeconds <= 60) {
+                return { label: 'Fresh', className: 'age-fresh' };
+            }
+            if (ageSeconds <= 180) {
+                return { label: `Stale ${Math.floor(ageSeconds / 60)}m`, className: 'age-stale' };
+            }
+            return { label: `Stale ${Math.floor(ageSeconds / 60)}m`, className: 'age-critical' };
+        }
+
+        function makeElement(tagName, className, text) {
+            const element = document.createElement(tagName);
+            if (className) {
+                element.className = className;
+            }
+            if (text !== undefined) {
+                element.textContent = text;
+            }
+            return element;
+        }
+
+        function renderStat(label, value) {
+            const item = makeElement('div', 'stat-item');
+            item.appendChild(makeElement('span', 'stat-label', label));
+            item.appendChild(makeElement('span', 'stat-value', String(value ?? '--')));
+            return item;
+        }
+
+        function humanizeLabel(key) {
+            return String(key)
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, (char) => char.toUpperCase());
+        }
+
+        function formatBytes(value) {
+            if (typeof value !== 'number' || Number.isNaN(value)) {
+                return '--';
+            }
+
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            let size = value;
+            let unitIndex = 0;
+            while (size >= 1024 && unitIndex < units.length - 1) {
+                size /= 1024;
+                unitIndex += 1;
+            }
+            return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+        }
+
+        function formatAgeSeconds(value) {
+            if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
+                return '--';
+            }
+            if (value < 60) {
+                return `${value}s`;
+            }
+            const minutes = Math.floor(value / 60);
+            const seconds = value % 60;
+            if (minutes < 60) {
+                return `${minutes}m ${seconds}s`;
+            }
+            const hours = Math.floor(minutes / 60);
+            return `${hours}h ${minutes % 60}m`;
+        }
+
+        function renderDetailItem(label, value) {
+            const item = makeElement('div', 'detail-item');
+            item.appendChild(makeElement('span', 'detail-label', label));
+            item.appendChild(makeElement('span', 'detail-value', String(value ?? '--')));
+            return item;
+        }
+
+        function renderSectionCard(title, entries) {
+            if (!entries.length) {
+                return null;
+            }
+
+            const section = makeElement('section', 'section-card');
+            section.appendChild(makeElement('h2', 'section-title', title));
+            const grid = makeElement('div', 'detail-grid');
+            for (const [label, value] of entries) {
+                grid.appendChild(renderDetailItem(label, value));
+            }
+            section.appendChild(grid);
+            return section;
+        }
+
+        function renderOptionalSystemSection(system) {
+            const optionalEntries = [];
+            if (system.disk_usage !== undefined) {
+                optionalEntries.push(['Disk Usage', system.disk_usage]);
+            }
+            if (system.disk_free_gb !== undefined) {
+                optionalEntries.push(['Disk Free', `${system.disk_free_gb} GB`]);
+            }
+            if (system.net_io_total_bytes !== undefined) {
+                optionalEntries.push(['Network I/O', formatBytes(system.net_io_total_bytes)]);
+            }
+
+            return renderSectionCard('Node Details', optionalEntries);
+        }
+
+        function renderPiholeSection(pihole) {
+            if (!pihole || typeof pihole !== 'object') {
+                return null;
+            }
+
+            const entries = [];
+            for (const [key, rawValue] of Object.entries(pihole)) {
+                if (key === 'source' || key === 'error') {
+                    continue;
+                }
+
+                let value = rawValue;
+                if (typeof rawValue === 'number' && key.includes('percentage')) {
+                    value = `${rawValue}%`;
+                }
+                entries.push([humanizeLabel(key), value]);
+            }
+
+            if (pihole.source) {
+                entries.push(['Source', pihole.source]);
+            }
+            if (pihole.error) {
+                entries.push(['Error', pihole.error]);
+            }
+
+            return renderSectionCard('Pi-hole', entries);
+        }
+
+        function renderWireguardSection(wireguard) {
+            if (!wireguard || typeof wireguard !== 'object') {
+                return null;
+            }
+
+            const section = makeElement('section', 'section-card');
+            section.appendChild(makeElement('h2', 'section-title', 'WireGuard'));
+
+            const summaryEntries = [];
+            if (wireguard.interface) {
+                summaryEntries.push(['Interface', wireguard.interface]);
+            }
+            if (wireguard.peers_online !== undefined) {
+                summaryEntries.push(['Peers Online', `${wireguard.peers_online}/${wireguard.peers_total ?? '--'}`]);
+            }
+            if (wireguard.latest_handshake_age_seconds !== undefined) {
+                summaryEntries.push(['Latest Handshake', formatAgeSeconds(wireguard.latest_handshake_age_seconds)]);
+            }
+            if (wireguard.total_rx_bytes !== undefined) {
+                summaryEntries.push(['RX Total', formatBytes(wireguard.total_rx_bytes)]);
+            }
+            if (wireguard.total_tx_bytes !== undefined) {
+                summaryEntries.push(['TX Total', formatBytes(wireguard.total_tx_bytes)]);
+            }
+            if (wireguard.error) {
+                summaryEntries.push(['Error', wireguard.error]);
+            }
+
+            const summaryCard = renderSectionCard('Tunnel Summary', summaryEntries);
+            if (summaryCard) {
+                section.appendChild(summaryCard.querySelector('.detail-grid'));
+            }
+
+            if (Array.isArray(wireguard.peers) && wireguard.peers.length) {
+                const peerList = makeElement('div', 'peer-list');
+                for (const peer of wireguard.peers) {
+                    const peerItem = makeElement('div', `peer-item ${peer.online ? 'peer-online' : 'peer-offline'}`);
+                    peerItem.appendChild(makeElement('div', 'peer-title', `${peer.public_key_short || 'Peer'}${peer.online ? ' · Online' : ' · Offline'}`));
+                    const peerGrid = makeElement('div', 'detail-grid');
+                    peerGrid.appendChild(renderDetailItem('Endpoint', peer.endpoint || 'Unknown'));
+                    peerGrid.appendChild(renderDetailItem('Last Handshake', formatAgeSeconds(peer.latest_handshake_age_seconds)));
+                    peerGrid.appendChild(renderDetailItem('RX', formatBytes(peer.rx_bytes)));
+                    peerGrid.appendChild(renderDetailItem('TX', formatBytes(peer.tx_bytes)));
+                    peerItem.appendChild(peerGrid);
+                    peerList.appendChild(peerItem);
+                }
+                section.appendChild(peerList);
+            }
+
+            return section;
+        }
+
+        function renderServiceRow(name, statusValue) {
+            const row = document.createElement('tr');
+            row.appendChild(makeElement('td', '', String(name)));
+
+            const statusCell = document.createElement('td');
+            const normalizedStatus = normalizeStatus(statusValue);
+            const statusLabel = makeElement('span', `status-pill ${STATUS_CLASS_MAP[normalizedStatus] || 'status-unknown'}`, normalizedStatus);
+            statusCell.appendChild(statusLabel);
+            row.appendChild(statusCell);
+            return row;
+        }
+
+        function renderNodeCard(data, sourceName) {
+            const card = makeElement('div', 'node-card');
+            const header = makeElement('div', 'node-header');
+            header.appendChild(makeElement('span', 'node-name', String(data.node || sourceName)));
+
+            const meta = makeElement('div', 'node-meta');
+            const timestampRaw = String(data.timestamp || 'Unknown');
+            const timestamp = parseNodeTimestamp(timestampRaw);
+            const badge = getAgeBadge(timestamp);
+
+            meta.appendChild(makeElement('span', 'timestamp', `Last Report: ${timestampRaw}`));
+            meta.appendChild(makeElement('span', `age-badge ${badge.className}`, badge.label));
+            header.appendChild(meta);
+            card.appendChild(header);
+
+            const stats = makeElement('div', 'stats-grid');
+            const system = data.system && typeof data.system === 'object' ? data.system : {};
+            stats.appendChild(renderStat('Temp', system.cpu_temp ?? '--'));
+            stats.appendChild(renderStat('CPU', system.cpu_usage ?? '--'));
+            stats.appendChild(renderStat('RAM', system.memory_usage ?? '--'));
+            card.appendChild(stats);
+
+            const optionalSystemSection = renderOptionalSystemSection(system);
+            if (optionalSystemSection) {
+                card.appendChild(optionalSystemSection);
+            }
+
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            headerRow.appendChild(makeElement('th', '', 'Service'));
+            headerRow.appendChild(makeElement('th', '', 'Status'));
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            const services = data.services && typeof data.services === 'object' ? data.services : {};
+            const serviceEntries = Object.entries(services);
+            if (serviceEntries.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.appendChild(makeElement('td', '', 'No service data'));
+                emptyRow.appendChild(makeElement('td', '', '--'));
+                tbody.appendChild(emptyRow);
+            } else {
+                for (const [name, statusValue] of serviceEntries) {
+                    tbody.appendChild(renderServiceRow(name, statusValue));
+                }
+            }
+            table.appendChild(tbody);
+            card.appendChild(table);
+
+            const piholeSection = renderPiholeSection(data.pihole);
+            if (piholeSection) {
+                card.appendChild(piholeSection);
+            }
+
+            const wireguardSection = renderWireguardSection(data.wireguard);
+            if (wireguardSection) {
+                card.appendChild(wireguardSection);
+            }
+
+            return card;
+        }
+
+        function renderErrorCard(sourceName, message) {
+            const card = makeElement('div', 'node-card error-card');
+            card.appendChild(makeElement('div', 'node-name', sourceName));
+            card.appendChild(makeElement('p', 'error-message', `Unable to load node status: ${message}`));
+            return card;
+        }
 
         async function updateDashboard() {
             const container = document.getElementById('dashboard-content');
-            let html = '';
+            const fragment = document.createDocumentFragment();
 
             for (const node of nodes) {
                 try {
-                    const response = await fetch(node + '?t=' + new Date().getTime());
+                    const response = await fetch(`${node}?t=${Date.now()}`, { cache: 'no-store' });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
                     const data = await response.json();
-                    
-                    html += `
-                        <div class="node-card">
-                            <div class="node-header">
-                                <span class="node-name">${data.node}</span>
-                                <span class="timestamp">Last Report: ${data.timestamp}</span>
-                            </div>
-                            <div class="stats-grid">
-                                <div class="stat-item"><span class="stat-label">Temp</span><span class="stat-value">${data.system.cpu_temp}</span></div>
-                                <div class="stat-item"><span class="stat-label">CPU</span><span class="stat-value">${data.system.cpu_usage}</span></div>
-                                <div class="stat-item"><span class="stat-label">RAM</span><span class="stat-value">${data.system.memory_usage}</span></div>
-                            </div>
-                            <table>
-                                <thead><tr><th>Service</th><th>Status</th></tr></thead>
-                                <tbody>
-                                    ${Object.entries(data.services).map(([name, status]) => `
-                                        <tr>
-                                            <td>${name}</td>
-                                            <td><span class="status-pill status-${status}">${status}</span></td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
-                } catch (e) { console.error('Missing: ' + node); }
+                    fragment.appendChild(renderNodeCard(data, node));
+                } catch (error) {
+                    console.error(`Missing or invalid status payload for ${node}:`, error);
+                    fragment.appendChild(renderErrorCard(node, error.message || 'Unknown error'));
+                }
             }
-            container.innerHTML = html;
+
+            container.replaceChildren(fragment);
         }
 
         setInterval(updateDashboard, 15000); // Auto-refresh every 15 seconds
