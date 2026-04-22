@@ -1,0 +1,13 @@
+[Unit]
+Description=Powderchest MAA BATFE - system vitals and status publisher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=BATFE
+WorkingDirectory=/home/BATFE/indomitable-rapscallion
+EnvironmentFile=/etc/powderchest/powderchest.env
+ExecStart=/home/BATFE/indomitable-rapscallion/venv/bin/python3 /home/BATFE/indomitable-rapscallion/maa_batfe.py
+StandardOutput=journal
+StandardError=journal

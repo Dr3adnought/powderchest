@@ -1,0 +1,13 @@
+[Unit]
+Description=Powderchest MAA ApplePi - system vitals and status publisher
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=admin
+WorkingDirectory=/mnt/data/maa-monitoring
+EnvironmentFile=/etc/powderchest/powderchest-applepi.env
+ExecStart=/mnt/data/maa-monitoring/venv/bin/python3 /mnt/data/maa-monitoring/maa_applepi.py
+StandardOutput=journal
+StandardError=journal

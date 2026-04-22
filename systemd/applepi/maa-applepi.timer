@@ -1,0 +1,11 @@
+[Unit]
+Description=Powderchest MAA ApplePi - run every minute
+Requires=maa-applepi.service
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=1min
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

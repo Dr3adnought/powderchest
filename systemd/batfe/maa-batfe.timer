@@ -1,0 +1,11 @@
+[Unit]
+Description=Powderchest MAA BATFE - run every minute
+Requires=maa-batfe.service
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=1min
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

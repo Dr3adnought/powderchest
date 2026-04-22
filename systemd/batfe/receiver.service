@@ -1,0 +1,18 @@
+[Unit]
+Description=Powderchest Receiver - ApplePi status ingest endpoint
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=BATFE
+WorkingDirectory=/home/BATFE/indomitable-rapscallion
+EnvironmentFile=/etc/powderchest/powderchest.env
+ExecStart=/home/BATFE/indomitable-rapscallion/venv/bin/python3 /home/BATFE/indomitable-rapscallion/receiver.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
