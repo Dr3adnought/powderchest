@@ -3,3 +3,4 @@ venv/
 www/status/*.json
 data/
 pi-dcy.txt
+.pihole_session_cache.json
