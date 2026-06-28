@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow,noarchive">
+    <title>PowderChest | About</title>
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon/powderchest_512px.png">
+    <link rel="apple-touch-icon" href="/assets/favicon/powderchest_512px.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #d4af37;
+            --ink: #07111c;
+            --panel-strong: rgba(7, 11, 19, 0.96);
+            --text: #f4f1e8;
+            --muted: #b8c0cc;
+            --danger: #ff6b6b;
+            --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            min-height: 100%;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top, rgba(212, 175, 55, 0.18), transparent 35%),
+                linear-gradient(180deg, rgba(6, 11, 18, 0.72), rgba(6, 11, 18, 0.9)),
+                url('/night_ocean.png') center center / cover fixed;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 22%),
+                radial-gradient(circle at 80% 10%, rgba(212, 175, 55, 0.08), transparent 18%),
+                linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.42));
+            pointer-events: none;
+        }
+
+        .page {
+            position: relative;
+            min-height: 100vh;
+            padding: clamp(1.25rem, 3vw, 2rem);
+            display: grid;
+            place-items: center;
+        }
+
+        .about-shell {
+            width: min(100%, 960px);
+            border: 1px solid rgba(212, 175, 55, 0.28);
+            border-radius: 24px;
+            background: linear-gradient(180deg, rgba(12, 18, 30, 0.88), rgba(6, 10, 18, 0.96));
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(14px);
+            overflow: hidden;
+        }
+
+        .about-hero {
+            padding: clamp(1.5rem, 4vw, 3rem);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.16);
+            background:
+                linear-gradient(135deg, rgba(212, 175, 55, 0.12), transparent 42%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+        }
+
+        .kicker {
+            margin: 0 0 0.85rem 0;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 0.28em;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2.5rem, 7vw, 5.5rem);
+            line-height: 0.95;
+            letter-spacing: -0.05em;
+        }
+
+        .subtitle {
+            margin: 1rem 0 0;
+            max-width: 62ch;
+            color: var(--muted);
+            font-size: clamp(1rem, 2.2vw, 1.12rem);
+            line-height: 1.7;
+        }
+
+        .glance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.85rem;
+            margin-top: 1.5rem;
+        }
+
+        .glance-item {
+            padding: 0.95rem 1rem;
+            border-radius: 16px;
+            border: 1px solid rgba(212, 175, 55, 0.18);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .glance-label {
+            display: block;
+            font-size: 0.72rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 0.4rem;
+            font-weight: 700;
+        }
+
+        .glance-value {
+            display: block;
+            color: var(--text);
+            line-height: 1.45;
+            font-size: 0.96rem;
+            font-weight: 600;
+        }
+
+        .glance-list {
+            margin: 0;
+            padding-left: 1rem;
+            color: var(--text);
+            font-size: 0.96rem;
+            line-height: 1.45;
+            font-weight: 600;
+        }
+
+        .glance-list li + li {
+            margin-top: 0.2rem;
+        }
+
+        .about-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            padding: clamp(1.25rem, 3vw, 2rem);
+        }
+
+        .card {
+            grid-column: span 6;
+            padding: 1.25rem;
+            border-radius: 18px;
+            border: 1px solid rgba(212, 175, 55, 0.16);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .card.full {
+            grid-column: 1 / -1;
+        }
+
+        .card.compact {
+            align-self: start;
+        }
+
+        .card h2 {
+            margin: 0 0 0.75rem 0;
+            font-size: 1rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+
+        .card p,
+        .card li {
+            margin: 0;
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 0.98rem;
+        }
+
+        .card p + p {
+            margin-top: 0.95rem;
+        }
+
+        .section-intro {
+            margin-bottom: 1rem;
+            max-width: 68ch;
+            color: var(--muted);
+        }
+
+        .card ul {
+            margin: 0;
+            padding-left: 1.15rem;
+            display: grid;
+            gap: 0.7rem;
+        }
+
+        .timeline-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .timeline-list li {
+            padding-left: 1rem;
+            border-left: 2px solid rgba(212, 175, 55, 0.26);
+        }
+
+        .timeline-label {
+            display: block;
+            color: var(--gold);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 0.2rem;
+            font-weight: 700;
+        }
+
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .pill {
+            padding: 0.55rem 0.85rem;
+            border-radius: 999px;
+            border: 1px solid rgba(212, 175, 55, 0.22);
+            background: rgba(212, 175, 55, 0.08);
+            color: var(--gold);
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        @media (max-width: 720px) {
+            .card {
+                grid-column: 1 / -1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="page" id="about-page" aria-hidden="false">
+        <section class="about-shell">
+            <header class="about-hero">
+                <p class="kicker">powderchest / about</p>
+                <h1>About me</h1>
+                <p class="subtitle">
+                    Hi, hello. My name is Jeff. This page is a quick introduction to the person behind PowderChest: how I work, what I build, and why a dramatic night-ocean theme felt like the right way to present a homelab.
+                </p>
+                <p>
+                    This page is not a resume, I already have one of those. If you're here, you've probably already seen it.
+                </p>
+
+                <div class="glance-grid" aria-label="About Jeff at a glance">
+                    <div class="glance-item">
+                        <span class="glance-label">Background</span>
+                        <ul class="glance-list">
+                            <li>Husband</li>
+                            <li>Father</li>
+                            <li>U.S. Navy veteran</li>
+                            <li>IT professional</li>
+                            <li>Software developer</li>
+                        </ul>
+                    </div>
+                    <div class="glance-item">
+                        <span class="glance-label">Education</span>
+                        <ul class="glance-list">
+                            <li>BA in Organizational Development</li>
+                            <li>MS in Information Technology</li>
+                        </ul>
+                    </div>
+                    <div class="glance-item">
+                        <span class="glance-label">Build Focus</span>
+                        <span class="glance-value">Self-hosted infrastructure, secure routing, and practical automation</span>
+                    </div>
+                    <div class="glance-item">
+                        <span class="glance-label">Core Stack</span>
+                        <span class="glance-value">Raspberry Pi cluster, Docker, Cloudflare, Nginx, WireGuard, PiHole, Unbound, Ollama AI, Minecraft, BlueMaps, Discord Bot</span>
+                    </div>
+                </div>
+            </header>
+
+            <section class="about-grid">
+                <article class="card compact">
+                    <h2>Who I am</h2>
+                    <p>
+                        I am the person who designs, tunes, and maintains this home-lab stack. I like practical systems, clear dashboards, and projects that feel playful without sacrificing utility.
+                    </p>
+                    <p>
+                        I built PowderChest to act as both an access point for my family and friend's Minecraft play, to serve as a display for the diagram of the system architecture, to provide a status dashboard to measure system performance and health, and to serve as a fully self-hosted ecosystem: a personal production environment where I can test secure deployment pipelines, local AI integrations, and infrastructure patterns that hold up under real use.
+                    </p>
+                </article>
+
+                <article class="card compact">
+                    <h2>More about me</h2>
+                    <ul class="timeline-list">
+                        <li>
+                            <span class="timeline-label">Service</span>
+                            I served in the U.S. Navy, where I learned discipline, teamwork, leadership, and the value of meticulous planning.
+                        </li>
+                        <li>
+                            <span class="timeline-label">Education</span>
+                            After leaving the Navy, I completed my BA in Organizational Development and my MS in Information Technology.
+                        </li>
+                        <li>
+                            <span class="timeline-label">Today</span>
+                            Those experiences shape how I build and maintain systems: carefully, pragmatically, and with a strong preference for infrastructure that is understandable as well as reliable.
+                        </li>
+                    </ul>
+                </article>
+
+                <article class="card full">
+                    <h2>What does the homelab stack do?</h2>
+                    <p class="section-intro">
+                        At a high level, this environment is a secure, containerized private cloud designed to bridge low-power, high-efficiency hardware with modern edge routing.
+                    </p>
+                    <p>
+                        The architecture achieves secure public service delivery and strict local privacy by leveraging Cloudflare Tunnels and an Nginx reverse proxy. That combination securely exposes web services and game server entry points to the public internet while hiding the underlying home IP address and eliminating open inbound ports.
+                    </p>
+                    <p>
+                        Behind that protective edge layer is an orchestrated compute environment across a multi-node Raspberry Pi cluster. Running Docker Engine, that layer isolates and manages diverse workloads ranging from gaming infrastructure to local large language models through Ollama AI and automated data-scraping scripts.
+                    </p>
+                    <p>
+                        Local network security and administrative access are handled through a Pi-hole DNS sinkhole paired with an upstream Unbound recursive DNS resolver, alongside WireGuard for encrypted remote administration. In practice, that means the stack is built to be usable from anywhere without becoming careless about exposure.
+                    </p>
+                    <p>
+                        The ecosystem is anchored by persistent shared storage on a Samba-configured HDD, which provides centralized file sharing and stateful storage for the containerized services that live across the stack.
+                    </p>
+                </article>
+
+                <article class="card full">
+                    <h2>Why the night ocean theme?</h2>
+                    <p>
+                        I chose the night ocean theme because to me it represents the human experience: everything above and everything below.
+                    </p>
+                    <p>
+                        There is a rare peace found only on a dark, glassy ocean, where the horizon fades and you are suspended between two vast wildernesses. When the sea is calm and the night is clear, the ocean and the sky cease to be separate things.
+                    </p>
+                    <p>
+                        The stars above represent our highest ambitions; the depths below, our quiet resilience. Between the two lies absolute clarity.
+                    </p>
+                </article>
+
+                <article class="card full">
+                    <h2>What this place is about</h2>
+                    <ul>
+                        <li>A working dashboard for servers, services, and visitor tracking.</li>
+                        <li>A home-lab environment that mixes utility with a strong visual identity.</li>
+                        <li>A place to experiment, document, and keep improving the system over time.</li>
+                    </ul>
+                    <div class="pill-row">
+                        <span class="pill">Builder</span>
+                        <span class="pill">Technician</span>
+                        <span class="pill">Engineer</span>
+                        <span class="pill">Developer</span>
+                        <span class="pill">Maintainer</span>
+                        <span class="pill">Tinkerer</span>
+                        <span class="pill">Problem Solver</span>
+                        <span class="pill">Sailor</span>
+                    </div>
+                </article>
+            </section>
+        </section>
+    </main>
+
+    <script>
+        async function recordAboutView() {
+            try {
+                await fetch('/api/about/record-view', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ source: 'about-page' })
+                });
+            } catch (error) {
+                console.log('About access metric unavailable:', error);
+            }
+        }
+
+        recordAboutView();
+    </script>
+</body>
+</html>

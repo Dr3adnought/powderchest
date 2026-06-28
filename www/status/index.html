@@ -44,6 +44,11 @@
         .status-unknown { background: #1f2937; color: #cbd5e1; }
         .error-card { border: 1px solid #7f1d1d; }
         .error-message { color: #fca5a5; margin: 0; }
+        .about-card { border: 1px solid #1e40af; }
+        .about-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+        .about-item { background: #334155; padding: 10px; border-radius: 4px; text-align: center; }
+        .about-label { display: block; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; }
+        .about-value { font-size: 1.1rem; font-weight: bold; }
 
         @media (max-width: 720px) {
             .node-header { flex-direction: column; align-items: flex-start; gap: 6px; }
@@ -362,9 +367,70 @@
             return card;
         }
 
+        function formatTimestamp(value) {
+            if (!value) {
+                return 'Never';
+            }
+
+            const parsed = new Date(value);
+            if (Number.isNaN(parsed.getTime())) {
+                return 'Unknown';
+            }
+
+            return parsed.toLocaleString();
+        }
+
+        async function fetchAboutAccessStats() {
+            const response = await fetch(`/api/about/stats?t=${Date.now()}`, { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        }
+
+        function renderAboutStatsCard(stats) {
+            const card = makeElement('section', 'node-card about-card');
+            card.appendChild(makeElement('div', 'node-name', 'About Page Access'));
+
+            const grid = makeElement('div', 'about-stats');
+
+            const unlockItem = makeElement('div', 'about-item');
+            unlockItem.appendChild(makeElement('span', 'about-label', 'Successful Unlocks'));
+            unlockItem.appendChild(makeElement('span', 'about-value', String(stats.unlockCount ?? 0)));
+            grid.appendChild(unlockItem);
+
+            const viewItem = makeElement('div', 'about-item');
+            viewItem.appendChild(makeElement('span', 'about-label', 'About Page Views'));
+            viewItem.appendChild(makeElement('span', 'about-value', String(stats.viewCount ?? 0)));
+            grid.appendChild(viewItem);
+
+            const lastItem = makeElement('div', 'about-item');
+            lastItem.appendChild(makeElement('span', 'about-label', 'Last Access'));
+            lastItem.appendChild(makeElement('span', 'about-value', formatTimestamp(stats.lastAccessAt)));
+            grid.appendChild(lastItem);
+
+            card.appendChild(grid);
+            return card;
+        }
+
+        function renderAboutStatsErrorCard(message) {
+            const card = makeElement('section', 'node-card about-card error-card');
+            card.appendChild(makeElement('div', 'node-name', 'About Page Access'));
+            card.appendChild(makeElement('p', 'error-message', `Unable to load about access stats: ${message}`));
+            return card;
+        }
+
         async function updateDashboard() {
             const container = document.getElementById('dashboard-content');
             const fragment = document.createDocumentFragment();
+
+            try {
+                const aboutStats = await fetchAboutAccessStats();
+                fragment.appendChild(renderAboutStatsCard(aboutStats));
+            } catch (error) {
+                console.error('Unable to load about access stats:', error);
+                fragment.appendChild(renderAboutStatsErrorCard(error.message || 'Unknown error'));
+            }
 
             for (const node of nodes) {
                 try {

@@ -12,6 +12,19 @@ services:
       - ./data:/data
     environment:
       - PYTHONUNBUFFERED=1
+      # Set ABOUT_PIN_HASH in an untracked .env file. If omitted, app.py falls back to ABOUT_PIN.
+      - ABOUT_PIN_HASH=${ABOUT_PIN_HASH}
+      - ABOUT_PIN=${ABOUT_PIN:-1749}
+      - ABOUT_AUTH_SECRET=${ABOUT_AUTH_SECRET:-powderchest-about-secret-change-me}
+      - ABOUT_AUTH_MAX_AGE_SECONDS=${ABOUT_AUTH_MAX_AGE_SECONDS:-86400}
+      - ABOUT_AUTH_COOKIE_NAME=${ABOUT_AUTH_COOKIE_NAME:-powderchest_about_auth}
+      - ABOUT_COOKIE_SECURE=${ABOUT_COOKIE_SECURE:-true}
+      - ABOUT_ADMIN_TOKEN=${ABOUT_ADMIN_TOKEN:-}
+      - ABOUT_IP_HASH_SALT=${ABOUT_IP_HASH_SALT:-powderchest-about-ip-salt-change-me}
+      - ABOUT_EVENT_LOG_LIMIT=${ABOUT_EVENT_LOG_LIMIT:-200}
+      - ABOUT_UNLOCK_RATE_WINDOW_SECONDS=${ABOUT_UNLOCK_RATE_WINDOW_SECONDS:-300}
+      - ABOUT_UNLOCK_RATE_MAX_ATTEMPTS=${ABOUT_UNLOCK_RATE_MAX_ATTEMPTS:-8}
+      - ABOUT_UNLOCK_LOCK_SECONDS=${ABOUT_UNLOCK_LOCK_SECONDS:-900}
     networks:
       - powderchest-network
     healthcheck:

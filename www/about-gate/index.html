@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow,noarchive">
+    <title>PowderChest | About Access</title>
+    <link rel="icon" type="image/png" sizes="512x512" href="/assets/favicon/powderchest_512px.png">
+    <link rel="apple-touch-icon" href="/assets/favicon/powderchest_512px.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #d4af37;
+            --text: #f4f1e8;
+            --muted: #b8c0cc;
+            --danger: #ff6b6b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 1rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top, rgba(212, 175, 55, 0.18), transparent 35%),
+                linear-gradient(180deg, rgba(6, 11, 18, 0.72), rgba(6, 11, 18, 0.9)),
+                url('/night_ocean.png') center center / cover fixed;
+        }
+
+        .gate-panel {
+            width: min(100%, 460px);
+            padding: 1.5rem;
+            border-radius: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.24);
+            background: rgba(7, 11, 19, 0.96);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(10px);
+        }
+
+        .kicker {
+            margin: 0 0 0.75rem 0;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: clamp(1.6rem, 4vw, 2rem);
+        }
+
+        p {
+            margin: 0 0 1rem 0;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .gate-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        input {
+            flex: 1;
+            min-width: 0;
+            padding: 0.9rem 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(212, 175, 55, 0.26);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            font: inherit;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16);
+        }
+
+        button {
+            border: 0;
+            border-radius: 12px;
+            background: var(--gold);
+            color: #08111c;
+            padding: 0.9rem 1.1rem;
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .gate-error {
+            min-height: 1.2rem;
+            margin-top: 0.75rem;
+            color: var(--danger);
+            font-size: 0.92rem;
+        }
+
+        @media (max-width: 640px) {
+            .gate-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="gate-panel" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+        <p class="kicker">powderchest / access</p>
+        <h1 id="gate-title">About page PIN</h1>
+        <p>Enter the shared PIN to continue.</p>
+
+        <div class="gate-row">
+            <input id="pin-input" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="PIN">
+            <button id="pin-submit" type="button">Unlock</button>
+        </div>
+        <div class="gate-error" id="gate-error" aria-live="polite"></div>
+    </section>
+
+    <script>
+        const pinInput = document.getElementById('pin-input');
+        const pinSubmit = document.getElementById('pin-submit');
+        const gateError = document.getElementById('gate-error');
+        const nextParam = new URLSearchParams(window.location.search).get('next');
+        const targetPath = nextParam && nextParam.startsWith('/about/') ? nextParam : '/about/';
+
+        async function checkExistingSession() {
+            try {
+                const response = await fetch('/api/about/session-check', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                if (response.ok) {
+                    window.location.replace(targetPath);
+                }
+            } catch (error) {
+                console.log('Session pre-check unavailable:', error);
+            }
+        }
+
+        async function attemptUnlock() {
+            const pin = pinInput.value.trim();
+            if (!pin) {
+                gateError.textContent = 'Enter a PIN first.';
+                pinInput.focus();
+                return;
+            }
+
+            pinSubmit.disabled = true;
+            gateError.textContent = 'Checking PIN...';
+
+            try {
+                const response = await fetch('/api/about/unlock', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ pin })
+                });
+
+                if (!response.ok) {
+                    let message = 'Incorrect PIN. Try again.';
+                    try {
+                        const body = await response.json();
+                        if (body && typeof body.error === 'string') {
+                            message = body.error;
+                        }
+                        if (body && typeof body.retryAfterSeconds === 'number' && body.retryAfterSeconds > 0) {
+                            message = `${message} (${body.retryAfterSeconds}s)`;
+                        }
+                    } catch (parseError) {
+                        // Keep the default message if the response is not JSON.
+                    }
+
+                    gateError.textContent = message;
+                    pinInput.select();
+                    return;
+                }
+
+                gateError.textContent = '';
+                window.location.replace(targetPath);
+            } catch (error) {
+                gateError.textContent = 'Access check is temporarily unavailable.';
+            } finally {
+                pinSubmit.disabled = false;
+            }
+        }
+
+        pinSubmit.addEventListener('click', attemptUnlock);
+        pinInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                attemptUnlock();
+            }
+        });
+
+        pinInput.focus();
+        checkExistingSession();
+    </script>
+</body>
+</html>
